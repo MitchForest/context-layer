@@ -20,6 +20,20 @@ Given a directory path, create an AGENTS.md file that captures what the CODE CAN
 
 ---
 
+## Phase 0: Generate Codemap
+
+First, generate the API surface using the CLI (if available):
+
+```bash
+context-layer codemap [target] --dry-run 2>/dev/null || echo "CLI not available"
+```
+
+If the CLI is available, save its output. This codemap will be included at the top of the AGENTS.md.
+
+If the CLI is not available, you'll generate a simple API surface manually during Phase 1.
+
+---
+
 ## Phase 1: Smart Read (Don't Overflow Context)
 
 ### List Files First
@@ -99,10 +113,22 @@ Look for:
 
 ## Phase 3: Generate Context Node
 
-Create `[target]/AGENTS.md`:
+Create `[target]/AGENTS.md` with TWO sections:
+1. **Codemap** (auto-generated, wrapped in HTML comments)
+2. **Curated content** (your analysis)
 
 ```markdown
 # [System Name]
+
+<!-- CODEMAP START - Auto-generated, do not edit -->
+## API Surface
+
+[Include the codemap output from Phase 0 here]
+[If CLI wasn't available, list key exports manually]
+
+<!-- CODEMAP END -->
+
+---
 
 > One sentence: what this system owns and what it delegates elsewhere.
 

@@ -1,8 +1,7 @@
 # Context Layer
 
-**Build and maintain hierarchical context systems that give AI agents the knowledge they need to work effectively on large codebases.**
+**Self-updating documentation that gives AI agents the architectural knowledge they need to work effectively on large codebases.**
 
-[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-Compatible-blue)](https://agentskills.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > **Inspired by**: [The Intent Layer](https://www.intent-systems.com/learn/intent-layer) by Tyler Brandt at Intent Systems
@@ -19,58 +18,59 @@ When agents work on your codebase, they start from zero. Every request is a full
 
 ## The Solution
 
-**Context Layer** captures that mental model in structured files (`AGENTS.md`) that auto-load when agents work in each area.
+**Context Layer** creates hierarchical `AGENTS.md` files throughout your codebase that:
 
+1. **Auto-update on every commit** — No manual maintenance required
+2. **Combine two types of knowledge**:
+   - **Codemaps** — Auto-generated API surface using tree-sitter (free, instant)
+   - **Curated content** — LLM-written ownership, invariants, and boundaries
+
+```markdown
+# AuthService
+
+<!-- CODEMAP START - Auto-generated, do not edit -->
+## API Surface
+- `function authenticate(token: string): User`
+- `function validateSession(sessionId: string): boolean`
+- `function logout(userId: string): void`
+<!-- CODEMAP END -->
+
+---
+
+## Ownership
+**Owns**: User sessions, authentication state, token validation
+**Does NOT own**: User data, permissions, account management
+
+## Invariants
+- Sessions expire after 24 hours
+- Never store plain-text passwords
+- All tokens must be validated before use
 ```
-your-repo/
-├── AGENTS.md              # Root: architecture, boundaries, principles
-├── CLAUDE.md → AGENTS.md  # Symlink for Claude Code
-│
-├── apps/
-│   ├── backend/
-│   │   ├── AGENTS.md      # Backend: auth patterns, error codes
-│   │   └── api/
-│   │       └── AGENTS.md  # API: endpoints, validation rules
-│   │
-│   └── frontend/
-│       └── AGENTS.md      # Frontend: state management, components
-```
-
-Each Context Node explains:
-- **What this area owns** (and doesn't own)
-- **Entry points and contracts**
-- **Patterns to follow**
-- **Anti-patterns to avoid**
-- **Invariants that must never be violated**
-
-Agents auto-load these nodes as they navigate your codebase, building up context before they touch code.
 
 ---
 
 ## Quick Start
 
-### Install (30 seconds)
+### Install
 
 ```bash
-# From your project root
 curl -sSL https://raw.githubusercontent.com/MitchForest/context-layer/main/install/install.sh | bash
 ```
 
-This installs 4 specialized subagents that work together:
-- **Coordinator** — Discovers systems, orchestrates everything
-- **Capture** — Deep analysis of individual systems  
-- **Maintain** — Updates existing nodes after code changes
-- **Synthesis** — Deduplicates and organizes hierarchy
+This installs:
+- **4 agents** to `.claude/agents/` (Coordinator, Capture, Maintain, Synthesis)
+- **1 skill** to `.claude/skills/` (entry point for Claude Code)
+- **CLI tool** (generates codemaps, installs git hook)
 
-### Use
+### Initial Build
 
-Just talk to your agent. No questions asked—pure self-discovery:
+In Claude Code:
 
-| Say This | What Happens |
-|----------|--------------|
-| "Build context layer for src/" | Full automated build with parallel capture |
-| "Maintain context layer" | Updates only what changed |
-| "Check context layer" | Reports staleness without changes |
+```
+> Build context layer for src/
+```
+
+The coordinator discovers systems, spawns capture agents in parallel, and runs synthesis.
 
 ### What You Get
 
@@ -80,31 +80,71 @@ your-project/
 │   └── manifest.json          # Systems registry
 │
 ├── AGENTS.md                  # Root node
-├── CLAUDE.md → AGENTS.md      # Symlink
+├── CLAUDE.md → AGENTS.md      # Symlink for Claude Code
 │
 └── src/
     ├── AGENTS.md              # Parent node
     │
     ├── auth/
-    │   └── AGENTS.md          # System node
+    │   └── AGENTS.md          # Codemap + curated content
     │
     ├── api/
     │   └── AGENTS.md
     │
-    ├── database/
-    │   └── AGENTS.md
-    │
-    └── utils/
+    └── database/
         └── AGENTS.md
+```
+
+### Auto-Maintenance
+
+After initial build, your context layer updates itself on every commit:
+
+```
+$ git commit -m "Add new feature"
+
+🧠 Context Layer: Processing commit...
+   ✓ Codemaps updated
+   → Changes detected, updating curated content with haiku...
+   ✓ Updated src/auth/AGENTS.md
+```
+
+**No manual intervention.** The git hook:
+1. Regenerates codemaps using tree-sitter (instant, free)
+2. Analyzes changes to determine if curated content needs updating
+3. Runs Haiku to update curated content automatically
+
+**To use Opus instead of Haiku:**
+```bash
+export CONTEXT_LAYER_MODEL=opus
 ```
 
 ---
 
 ## How It Works
 
+### Two-Part AGENTS.md Structure
+
+Every AGENTS.md file has two sections:
+
+| Section | Generated By | Updated |
+|---------|--------------|---------|
+| **Codemap** | CLI (tree-sitter) | Every commit (automatic) |
+| **Curated content** | LLM (Haiku/Opus) | When changes detected (automatic) |
+
+The codemap provides the API surface. The curated content provides what code can't express: ownership, invariants, boundaries.
+
+### Supported Languages
+
+| Language | Codemap Support |
+|----------|----------------|
+| TypeScript/TSX | ✅ |
+| JavaScript/JSX | ✅ |
+| Python | ✅ |
+| Swift | ✅ |
+
 ### Subagent Architecture
 
-Context Layer uses specialized subagents that each get their own context window:
+Context Layer uses specialized subagents for the initial build:
 
 ```
 User: "Build context layer for src/"
@@ -142,14 +182,6 @@ When an agent works in a directory, it automatically loads:
 
 This gives agents a **T-shaped view**: broad context at the top, specific detail where they're working.
 
-### The Systems Manifest
-
-`.context-layer/manifest.json` tracks:
-- All discovered systems and their purposes
-- Interface relationships (what provides/consumes what)
-- Last capture timestamps for efficient maintenance
-- Token counts and hierarchy structure
-
 ### LCA Optimization
 
 Shared knowledge is automatically deduplicated to the **Least Common Ancestor**:
@@ -159,23 +191,16 @@ Before: Same fact in 3 leaf nodes (wasteful)
 After:  Fact moved to parent node (loads once)
 ```
 
-### Model Selection
+---
 
-All agents inherit the model from your main conversation:
-- Using Opus? All subagents use Opus (deepest analysis)
-- Using Sonnet? All subagents use Sonnet (good balance)
-- Using Haiku? All subagents use Haiku (fastest)
+## CLI Commands
 
-To override, edit the agent files in `.claude/agents/` and change `model: inherit` to `model: opus` (or `sonnet`, `haiku`).
-
-### Compression
-
-A good Context Node distills a large area into minimal tokens:
-- Root node: 2-3k tokens covers entire repo architecture
-- Parent nodes: 500-1.5k tokens
-- Leaf nodes: 800-1.5k tokens each
-
-Total overhead: 10-15k tokens for a complete Context Layer on a large monorepo.
+| Command | What It Does |
+|---------|--------------|
+| `context-layer init` | Initialize project, install git hook |
+| `context-layer codemap [path]` | Generate API surface using tree-sitter |
+| `context-layer status` | Show coverage and what's documented |
+| `context-layer analyze` | Analyze changes since last commit |
 
 ---
 
@@ -197,8 +222,6 @@ Once built, the `AGENTS.md` files work with **any AI tool** that loads context f
 - ✅ Amp
 - ✅ Goose
 
-**Workflow**: Use Claude Code to build your Context Layer, then any agent benefits from the hierarchical `AGENTS.md` files.
-
 ---
 
 ## File Convention
@@ -208,10 +231,9 @@ Once built, the `AGENTS.md` files work with **any AI tool** that loads context f
 | `AGENTS.md` | Primary context file | Codex, most tools |
 | `CLAUDE.md` | Symlink to AGENTS.md | Claude Code |
 
-Always create both: `AGENTS.md` as the source, `CLAUDE.md` as a symlink.
+The installer creates symlinks automatically. To create one manually:
 
 ```bash
-# In any directory with a context node
 ln -s AGENTS.md CLAUDE.md
 ```
 
@@ -223,9 +245,8 @@ Context Layer is inspired by Tyler Brandt's excellent article [The Intent Layer]
 
 1. **Compress context**: Distill large areas into minimal, high-signal tokens
 2. **Surface hidden knowledge**: Capture what code can't express
-3. **Progressive disclosure**: Load minimal context, drill in as needed
+3. **Self-maintaining**: Auto-update on every commit
 4. **Least Common Ancestor**: Shared knowledge lives at the shallowest covering node
-5. **Maintenance flywheel**: Keep nodes in sync with code changes
 
 ---
 
@@ -236,4 +257,3 @@ Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
 ## License
 
 MIT © [Context Layer Contributors](LICENSE)
-

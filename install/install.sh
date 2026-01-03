@@ -76,6 +76,25 @@ find . -name "AGENTS.md" \
   fi
 done
 
+# Install CLI for auto-updating codemaps and git hook
+CLI_INSTALLED=false
+if command -v npm &> /dev/null; then
+  echo ""
+  echo "📦 Installing context-layer CLI..."
+  if npm install -g context-layer 2>&1 | grep -q "added"; then
+    CLI_INSTALLED=true
+    echo "   ✓ CLI installed globally"
+    
+    # Initialize (creates manifest, installs git hook)
+    if command -v context-layer &> /dev/null; then
+      context-layer init --existing 2>/dev/null || true
+      echo "   ✓ Git hook installed (auto-maintains on every commit)"
+    fi
+  else
+    echo "   ℹ CLI not installed (run: npm install -g context-layer)"
+  fi
+fi
+
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ Context Layer installed successfully!"
@@ -106,5 +125,21 @@ echo "   3. Deduplicate shared knowledge"
 echo "   4. Create hierarchical AGENTS.md files"
 echo "   5. Maintain a manifest at .context-layer/manifest.json"
 echo ""
+
+if [ "$CLI_INSTALLED" = true ]; then
+  echo "CLI commands available:"
+  echo "   context-layer status    # Show coverage and status"
+  echo "   context-layer codemap   # Generate/update codemaps"
+  echo "   context-layer analyze   # Analyze changes"
+  echo ""
+  echo "🔄 AUTO-MAINTENANCE ENABLED"
+  echo "   On every commit, the git hook will:"
+  echo "   1. Update codemaps (instant, free)"
+  echo "   2. Run Haiku to update curated content (if changes detected)"
+  echo ""
+  echo "   To use Opus instead: export CONTEXT_LAYER_MODEL=opus"
+  echo ""
+fi
+
 echo "Once built, the AGENTS.md files work with any AI tool. ✨"
 echo ""

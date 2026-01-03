@@ -56,6 +56,7 @@ Creates a complete Context Layer:
 
 > "Maintain context layer"
 > "Sync context layer"
+> "Update context layer"
 
 Updates an existing Context Layer:
 1. Coordinator loads existing manifest
@@ -74,6 +75,29 @@ Reports on staleness without making changes.
 > "Capture context for apps/ios/scribble/Core/Validation"
 
 Captures just one system (uses capture agent directly).
+
+### Build Pending
+
+> "Build pending context layer systems"
+
+Captures systems detected but not yet documented (tracked in manifest).
+
+---
+
+## Automatic Maintenance
+
+When the CLI is installed, a git hook runs on every commit:
+
+1. **Codemaps updated** — Tree-sitter regenerates API surfaces (instant, free)
+2. **Changes analyzed** — CLI determines if curated content needs updating
+3. **Haiku auto-runs** — Updates curated content automatically
+
+No manual intervention required. The context layer stays in sync with your code.
+
+**To use Opus instead of Haiku:**
+```bash
+export CONTEXT_LAYER_MODEL=opus
+```
 
 ---
 

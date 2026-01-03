@@ -9,6 +9,10 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Node (if we add any tooling later)
+# Node
 node_modules/
+dist/
+
+# CLI package
+packages/cli/wasm/
 

@@ -28,6 +28,17 @@ When user says "Build context layer for apps/ios", you:
 
 ---
 
+## CLI Tool Integration
+
+If the `context-layer` CLI is installed, it provides:
+- `context-layer codemap <path>` - Generates API surface using tree-sitter
+- `context-layer status` - Shows coverage and what's documented
+- `context-layer analyze` - Analyzes changes since last commit
+
+The capture agents will call the CLI to generate codemaps. If the CLI isn't available, they'll generate a simpler API surface manually.
+
+---
+
 ## Parallel Subagent Execution
 
 Spawn capture subagents in parallel, but **batch them to avoid overwhelming the system**:

@@ -1,0 +1,57 @@
+{
+  "name": "context-layer",
+  "version": "0.1.0",
+  "description": "CLI for Context Layer - self-updating documentation for codebases",
+  "type": "module",
+  "bin": {
+    "context-layer": "./bin/context-layer.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "bin",
+    "scripts"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "lint": "eslint src/",
+    "postinstall": "node scripts/download-wasm.js",
+    "download-wasm": "node scripts/download-wasm.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ai",
+    "documentation",
+    "agents",
+    "context",
+    "tree-sitter",
+    "codemap"
+  ],
+  "author": "MitchForest",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MitchForest/context-layer.git"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "web-tree-sitter": "^0.26.3",
+    "glob": "^10.3.10",
+    "chalk": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+
