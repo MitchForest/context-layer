@@ -1,6 +1,6 @@
 {
   "name": "context-layer",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "CLI for Context Layer - self-updating documentation for codebases",
   "type": "module",
   "bin": {

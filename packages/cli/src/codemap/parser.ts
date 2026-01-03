@@ -156,28 +156,47 @@ export async function parseSwift(content: string): Promise<Signature[]> {
   
   const signatures: Signature[] = [];
   
-  function walk(node: SyntaxNode) {
-    const isPrivate = node.text.includes('private ') || node.text.includes('fileprivate ');
-    if (isPrivate) return;
+  function isPrivateDeclaration(node: SyntaxNode): boolean {
+    // Check modifiers for private/fileprivate
+    const modifiers = node.children.find(c => c.type === 'modifiers');
+    if (modifiers) {
+      const modText = modifiers.text;
+      if (modText.includes('private') || modText.includes('fileprivate')) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  function walk(node: SyntaxNode, depth: number = 0) {
+    // Only capture top-level declarations (depth 0) and first-level nested (depth 1)
+    if (depth > 1) return;
     
     switch (node.type) {
+      // Swift uses class_declaration for class, struct, AND enum
       case 'class_declaration': {
+        if (isPrivateDeclaration(node)) break;
+        
         const nameNode = node.children.find(c => c.type === 'type_identifier');
-        if (nameNode) {
+        if (!nameNode) break;
+        
+        // Determine actual type by looking for enum/struct/class child
+        const isEnum = node.children.some(c => c.type === 'enum');
+        const isStruct = node.children.some(c => c.type === 'struct');
+        const isClass = node.children.some(c => c.type === 'class');
+        
+        if (isEnum) {
+          signatures.push({ name: nameNode.text, kind: 'enum', signature: `enum ${nameNode.text}`, exported: true });
+        } else if (isStruct) {
+          signatures.push({ name: nameNode.text, kind: 'struct', signature: `struct ${nameNode.text}`, exported: true });
+        } else if (isClass) {
           signatures.push({ name: nameNode.text, kind: 'class', signature: `class ${nameNode.text}`, exported: true });
         }
         break;
       }
       
-      case 'struct_declaration': {
-        const nameNode = node.children.find(c => c.type === 'type_identifier');
-        if (nameNode) {
-          signatures.push({ name: nameNode.text, kind: 'struct', signature: `struct ${nameNode.text}`, exported: true });
-        }
-        break;
-      }
-      
       case 'protocol_declaration': {
+        if (isPrivateDeclaration(node)) break;
         const nameNode = node.children.find(c => c.type === 'type_identifier');
         if (nameNode) {
           signatures.push({ name: nameNode.text, kind: 'protocol', signature: `protocol ${nameNode.text}`, exported: true });
@@ -185,15 +204,8 @@ export async function parseSwift(content: string): Promise<Signature[]> {
         break;
       }
       
-      case 'enum_declaration': {
-        const nameNode = node.children.find(c => c.type === 'type_identifier');
-        if (nameNode) {
-          signatures.push({ name: nameNode.text, kind: 'enum', signature: `enum ${nameNode.text}`, exported: true });
-        }
-        break;
-      }
-      
       case 'function_declaration': {
+        if (isPrivateDeclaration(node)) break;
         const nameNode = node.children.find(c => c.type === 'simple_identifier');
         if (nameNode) {
           signatures.push({ name: nameNode.text, kind: 'function', signature: `func ${nameNode.text}()`, exported: true });
@@ -203,11 +215,11 @@ export async function parseSwift(content: string): Promise<Signature[]> {
     }
     
     for (const child of node.children) {
-      walk(child);
+      walk(child, depth + 1);
     }
   }
   
-  walk(tree.rootNode);
+  walk(tree.rootNode, 0);
   return signatures;
 }
 
