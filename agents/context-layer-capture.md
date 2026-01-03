@@ -25,12 +25,24 @@ Given a directory path, create an AGENTS.md file that captures what the CODE CAN
 First, generate the API surface using the CLI (if available):
 
 ```bash
-context-layer codemap [target] --dry-run 2>/dev/null || echo "CLI not available"
+context-layer codemap [target] --dry-run 2>/dev/null
 ```
 
-If the CLI is available, save its output. This codemap will be included at the top of the AGENTS.md.
+**If CLI succeeds**: Save the output. It will look like:
+```
+<!-- CODEMAP START - Auto-generated, do not edit -->
+## API Surface
 
-If the CLI is not available, you'll generate a simple API surface manually during Phase 1.
+### ServiceName.swift
+- `class ServiceName`
+- `func doThing(param: Type) -> Result`
+...
+<!-- CODEMAP END -->
+```
+
+Include this EXACTLY as the first section of the AGENTS.md.
+
+**If CLI fails or isn't installed**: Skip codemap. The AGENTS.md will only have curated content.
 
 ---
 
