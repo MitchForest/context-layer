@@ -14,11 +14,17 @@ const wasmDir = join(__dirname, '..', 'wasm');
 // WASM files from various sources
 // These are pre-built WASM files that work with web-tree-sitter
 const WASM_FILES = {
-  // From tree-sitter playground / emscripten builds
+  // TypeScript / JavaScript
   'tree-sitter-typescript.wasm': 'https://cdn.jsdelivr.net/npm/tree-sitter-typescript@0.23.2/tree-sitter-typescript.wasm',
   'tree-sitter-tsx.wasm': 'https://cdn.jsdelivr.net/npm/tree-sitter-typescript@0.23.2/tree-sitter-tsx.wasm',
+  // Python
   'tree-sitter-python.wasm': 'https://cdn.jsdelivr.net/npm/tree-sitter-python@0.23.6/tree-sitter-python.wasm',
+  // Swift
   'tree-sitter-swift.wasm': 'https://github.com/alex-pinkus/tree-sitter-swift/releases/download/0.7.1-pypi/tree-sitter-swift.wasm',
+  // Rust
+  'tree-sitter-rust.wasm': 'https://cdn.jsdelivr.net/npm/tree-sitter-rust@0.23.2/tree-sitter-rust.wasm',
+  // Go
+  'tree-sitter-go.wasm': 'https://cdn.jsdelivr.net/npm/tree-sitter-go@0.23.4/tree-sitter-go.wasm',
 };
 
 async function download(url, filename) {

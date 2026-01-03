@@ -1,156 +1,100 @@
 ---
 name: context-layer
-description: Build and maintain hierarchical Context Layers that document systems design - ownership, lifecycle, contracts, and boundaries. Triggers specialized subagents for discovery, capture, and synthesis. Use when asked to "build context layer", "maintain context layer", or "sync context layer".
+description: Build and update Context Layers - hierarchical AGENTS.md files documenting systems design. One command handles both initial builds and updates.
 tools: Agent
 model: inherit
 ---
 
 # Context Layer Skill
 
-A skill for building and maintaining Context Layers - hierarchical AGENTS.md files that document **systems design**: ownership, lifecycle, input/output contracts, and boundaries. This gives AI agents the architectural understanding they need to work effectively on large codebases.
+Build and maintain Context Layers - hierarchical AGENTS.md files that document **systems design**: ownership, lifecycle, contracts, and boundaries.
 
-## How It Works
+## One Command
 
-Context Layer uses a hierarchy of specialized subagents:
+```
+> Build context layer
+```
+
+The coordinator handles everything:
+- **No manifest?** → Initial build (discovers systems, captures all with Opus)
+- **Has manifest?** → Update (diffs since last capture, uses Haiku for minor changes, Opus for major)
+
+## Architecture
 
 ```
 ┌─────────────────────────────────┐
-│   COORDINATOR                   │ ← Orchestrates everything
-│   - Discovers systems           │
-│   - Manages manifest            │
-│   - Spawns other agents         │
+│   COORDINATOR                   │ ← Discovers systems, analyzes diffs
+│   - Initial build or update    │
+│   - Model selection (Opus/Haiku)│
 └───────────────┬─────────────────┘
-                │
+                │ Sequential (one at a time)
     ┌───────────┼───────────┐
     ▼           ▼           ▼
 ┌─────────┐ ┌─────────┐ ┌─────────┐
-│ CAPTURE │ │ CAPTURE │ │ CAPTURE │  ← Each system gets own agent
-│ System1 │ │ System2 │ │ System3 │
-└────┬────┘ └────┬────┘ └────┬────┘
-     └───────────┴───────────┘
+│ CAPTURE │ │ CAPTURE │ │ CAPTURE │
+│ Opus    │ │ Haiku   │ │ Skip    │
+└────┬────┘ └────┬────┘ └─────────┘
+     └───────────┘
                 │
                 ▼
 ┌─────────────────────────────────┐
-│   SYNTHESIS                     │ ← Deduplicates & organizes
-│   - LCA optimization            │
-│   - Adds downlinks              │
-│   - Creates parent nodes        │
+│   SYNTHESIS                     │ ← Deduplicates, creates parents
 └─────────────────────────────────┘
 ```
 
----
-
 ## Commands
 
-### Build Mode (from scratch)
+| Say | Action |
+|-----|--------|
+| "Build context layer" | Full build or update (auto-detects) |
+| "Build context layer for src/" | Scoped to directory |
+| "Update context layer" | Same as build |
 
-> "Build context layer for src/"
+## Model Selection
 
-Creates a complete Context Layer:
-1. Coordinator discovers all systems
-2. Capture agents analyze each system in parallel
-3. Synthesis agent deduplicates and organizes
-4. Manifest created at `.context-layer/manifest.json`
+The coordinator analyzes git diffs and chooses:
 
-### Maintain Mode (update existing)
-
-> "Maintain context layer"
-> "Sync context layer"
-> "Update context layer"
-
-Updates an existing Context Layer:
-1. Coordinator loads existing manifest
-2. Detects changes since last sync
-3. Maintain agents update only changed nodes
-4. Synthesis re-runs for hierarchy
-
-### Check Mode (report only)
-
-> "Check context layer"
-
-Reports on staleness without making changes.
-
-### Single System
-
-> "Capture context for src/core/validation"
-
-Captures just one system (uses capture agent directly).
-
-### Build Pending
-
-> "Build pending context layer systems"
-
-Captures systems detected but not yet documented (tracked in manifest).
-
----
-
-## Automatic Maintenance
-
-When the CLI is installed, a git hook runs on every commit:
-
-1. **Codemaps updated** — Tree-sitter regenerates API surfaces (instant, free)
-2. **Changes analyzed** — CLI determines if curated content needs updating
-3. **Haiku auto-runs** — Updates curated content automatically
-
-No manual intervention required. The context layer stays in sync with your code.
-
-**To use Opus instead of Haiku:**
-```bash
-export CONTEXT_LAYER_MODEL=opus
-```
-
----
+| Change | Model |
+|--------|-------|
+| New system | Opus |
+| New files added | Opus |
+| Major rewrites | Opus |
+| Minor edits | Haiku |
+| No changes | Skip |
 
 ## What Gets Created
 
 ```
-your-project/
+project/
 ├── .context-layer/
-│   └── manifest.json          # Systems registry & hierarchy
+│   └── manifest.json         # Tracks systems + last commit
 │
-├── AGENTS.md                  # Root node
-├── CLAUDE.md → AGENTS.md      # Symlink for Claude Code
-│
-└── [target]/
-    ├── AGENTS.md              # Parent node
-    ├── CLAUDE.md → AGENTS.md
-    │
-    ├── System1/
-    │   ├── AGENTS.md          # System node
-    │   └── CLAUDE.md → AGENTS.md
-    │
-    └── System2/
-        ├── AGENTS.md
-        └── CLAUDE.md → AGENTS.md
+├── src/
+│   ├── AGENTS.md             # Parent node
+│   ├── CLAUDE.md → AGENTS.md
+│   │
+│   ├── services/
+│   │   ├── AGENTS.md         # Codemap + curated content
+│   │   └── CLAUDE.md
+│   │
+│   └── core/
+│       ├── AGENTS.md
+│       └── CLAUDE.md
 ```
 
----
+## Capture Agent
 
-## The Manifest
+Each capture:
+1. Runs `context-layer codemap <path>` (tree-sitter API surface)
+2. Reads all source files
+3. Writes AGENTS.md with codemap + curated content
+4. Creates CLAUDE.md symlink
+
+## Manifest
 
 `.context-layer/manifest.json` tracks:
+- Systems and their paths
+- Last commit hash per system
+- Last capture timestamp
 
-- All discovered systems
-- Their interfaces (what they provide/consume)
-- Last capture timestamps
-- Token counts
-- Hierarchy structure
-
-This enables efficient maintenance - only re-capture what changed.
-
----
-
-## Invocation
-
-When you say any of:
-- "Build context layer for [path]"
-- "Create context layer for [path]"
-- "Maintain context layer"
-- "Sync context layer"
-- "Update context layer"
-- "Check context layer"
-
-This skill triggers the coordinator agent, which orchestrates everything automatically.
-
-**No questions asked. Pure self-discovery.**
-
+This enables efficient updates - only re-capture what changed.

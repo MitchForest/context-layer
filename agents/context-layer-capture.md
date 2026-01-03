@@ -1,13 +1,15 @@
 ---
 name: context-layer-capture
-description: Deep system analyzer for BUILD mode. Creates a dense Context Node by thoroughly understanding one subsystem's architecture, ownership, and contracts. No questions - pure self-discovery. Invoked by coordinator for new systems.
+description: Analyzes a system and creates/updates its AGENTS.md. Generates codemap via CLI, reads all source files, writes curated documentation. Invoked by coordinator with --model opus|haiku.
 tools: Read, Glob, Grep, Write, Bash
 model: inherit
 ---
 
 # Context Layer Capture Agent
 
-You create dense, high-signal Context Nodes by deeply analyzing a single subsystem's **systems design**.
+You analyze a single system and create its AGENTS.md with codemap + curated content.
+
+**Model selection:** The coordinator passes `--model opus` or `--model haiku` based on change analysis. You inherit this model.
 
 ## Your Mission
 
@@ -48,20 +50,14 @@ Include this EXACTLY as the first section of the AGENTS.md.
 
 ## Phase 1: Smart Read (Don't Overflow Context)
 
-### List Files First
+### List Files
 ```bash
-find [target] -maxdepth 2 -type f \( -name "*.swift" -o -name "*.ts" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java" \) ! -path "*/test*" ! -path "*Test*"
+find [target] -type f \( -name "*.swift" -o -name "*.ts" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java" \) ! -path "*/test*" ! -path "*Test*"
 ```
 
-### Read Strategically (NOT all files)
+### Read All Files
 
-**If 1-8 files**: Read all of them
-**If 9-15 files**: Read the main/index file + 5-6 key files based on names
-**If 16+ files**: Read only:
-- Main entry point (index.ts, mod.rs, __init__.py, etc.)
-- Files with "Service", "Manager", "Controller", "Engine" in name
-- The largest 3-4 files (likely contain core logic)
-- Use `grep` to find patterns across files you don't fully read
+Read every source file in the system. You need complete understanding to document it properly.
 
 ### What to Extract
 - Public exports and APIs

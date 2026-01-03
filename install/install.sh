@@ -32,9 +32,6 @@ echo "   ✓ context-layer-coordinator"
 curl -sL "$REPO_URL/agents/context-layer-capture.md" -o "$AGENTS_DIR/context-layer-capture.md"
 echo "   ✓ context-layer-capture"
 
-curl -sL "$REPO_URL/agents/context-layer-maintain.md" -o "$AGENTS_DIR/context-layer-maintain.md"
-echo "   ✓ context-layer-maintain"
-
 curl -sL "$REPO_URL/agents/context-layer-synthesis.md" -o "$AGENTS_DIR/context-layer-synthesis.md"
 echo "   ✓ context-layer-synthesis"
 
@@ -76,20 +73,12 @@ find . -name "AGENTS.md" \
   fi
 done
 
-# Install CLI for auto-updating codemaps and git hook
-CLI_INSTALLED=false
+# Install CLI for codemap generation
 if command -v npm &> /dev/null; then
   echo ""
   echo "📦 Installing context-layer CLI..."
   if npm install -g context-layer 2>&1 | grep -q "added"; then
-    CLI_INSTALLED=true
-    echo "   ✓ CLI installed globally"
-    
-    # Initialize (creates manifest, installs git hook)
-    if command -v context-layer &> /dev/null; then
-      context-layer init --existing 2>/dev/null || true
-      echo "   ✓ Git hook installed (auto-maintains on every commit)"
-    fi
+    echo "   ✓ CLI installed (provides tree-sitter codemaps)"
   else
     echo "   ℹ CLI not installed (run: npm install -g context-layer)"
   fi
@@ -102,44 +91,19 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo "Agents installed to $AGENTS_DIR:"
 echo "   • context-layer-coordinator (orchestrates everything)"
-echo "   • context-layer-capture (deep system analysis)"
-echo "   • context-layer-maintain (updates existing nodes)"
+echo "   • context-layer-capture (analyzes systems)"
 echo "   • context-layer-synthesis (deduplication & hierarchy)"
 echo ""
 echo "Usage (in Claude Code):"
 echo ""
-echo "   BUILD (from scratch):"
-echo "   > Build context layer for src/"
+echo "   > Build context layer"
 echo ""
-echo "   MAINTAIN (update existing):"
-echo "   > Maintain context layer"
-echo "   > Sync context layer"
+echo "   The coordinator will:"
+echo "   - Discover systems in your codebase"
+echo "   - Initial build: capture all with Opus"
+echo "   - Updates: use Haiku for minor changes, Opus for major"
+echo "   - Run synthesis to deduplicate"
+echo "   - Create hierarchical AGENTS.md files"
 echo ""
-echo "   CHECK (report only):"
-echo "   > Check context layer"
-echo ""
-echo "The agents will automatically:"
-echo "   1. Discover all systems in your codebase"
-echo "   2. Capture context for each system"
-echo "   3. Deduplicate shared knowledge"
-echo "   4. Create hierarchical AGENTS.md files"
-echo "   5. Maintain a manifest at .context-layer/manifest.json"
-echo ""
-
-if [ "$CLI_INSTALLED" = true ]; then
-  echo "CLI commands available:"
-  echo "   context-layer status    # Show coverage and status"
-  echo "   context-layer codemap   # Generate/update codemaps"
-  echo "   context-layer analyze   # Analyze changes"
-  echo ""
-  echo "🔄 AUTO-MAINTENANCE ENABLED"
-  echo "   On every commit, the git hook will:"
-  echo "   1. Update codemaps (instant, free)"
-  echo "   2. Run Haiku to update curated content (if changes detected)"
-  echo ""
-  echo "   To use Opus instead: export CONTEXT_LAYER_MODEL=opus"
-  echo ""
-fi
-
 echo "Once built, the AGENTS.md files work with any AI tool. ✨"
 echo ""

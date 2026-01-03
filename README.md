@@ -1,259 +1,254 @@
 # Context Layer
 
-**Self-updating documentation that gives AI agents the architectural knowledge they need to work effectively on large codebases.**
+**Hierarchical documentation that gives AI agents the architectural knowledge to work effectively on large codebases.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
-> **Inspired by**: [The Intent Layer](https://www.intent-systems.com/learn/intent-layer) by Tyler Brandt at Intent Systems
 
 ---
 
 ## The Problem
 
-The ceiling on AI results isn't model intelligence—it's what the model sees before it acts.
+Your best engineers carry mental models: what each subsystem owns, what must never happen, where the real boundaries live. That knowledge lives in heads, not in code.
 
-Your best engineers carry mental models: what each subsystem owns, what must never happen, where the real boundaries live. That knowledge accumulated over years of bugs, outages, and code reviews. It lives in heads and scattered docs, not in code.
-
-When agents work on your codebase, they start from zero. Every request is a full onboarding—not just to your task, but to your entire system. On large codebases, agents can't fit everything into context. They fumble in the dark, learning only by what they bump into.
+When AI agents work on your codebase, they start from zero. They fumble in the dark, learning only by what they bump into.
 
 ## The Solution
 
-**Context Layer** creates hierarchical `AGENTS.md` files throughout your codebase that:
+Context Layer creates hierarchical `AGENTS.md` files that combine:
 
-1. **Auto-update on every commit** — No manual maintenance required
-2. **Combine two types of knowledge**:
-   - **Codemaps** — Auto-generated API surface using tree-sitter (free, instant)
-   - **Curated content** — LLM-written ownership, invariants, and boundaries
+- **Codemaps** — API surface extracted via tree-sitter (function signatures, classes, types)
+- **Curated content** — Ownership, invariants, boundaries written by an LLM
+
+**The result:** Every new chat or agent starts with your system's architecture already loaded. No more wasting context window tokens rediscovering the same patterns, boundaries, and invariants from scratch.
 
 ```markdown
 # AuthService
 
-<!-- CODEMAP START - Auto-generated, do not edit -->
+<!-- CODEMAP START -->
 ## API Surface
 - `function authenticate(token: string): User`
 - `function validateSession(sessionId: string): boolean`
-- `function logout(userId: string): void`
 <!-- CODEMAP END -->
 
 ---
 
 ## Ownership
-**Owns**: User sessions, authentication state, token validation
-**Does NOT own**: User data, permissions, account management
+**Owns**: User sessions, token validation
+**Does NOT own**: User data, permissions
 
 ## Invariants
 - Sessions expire after 24 hours
 - Never store plain-text passwords
-- All tokens must be validated before use
 ```
 
 ---
 
-## Quick Start
-
-### Install
+## Install
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/MitchForest/context-layer/main/install/install.sh | bash
 ```
 
 This installs:
-- **4 agents** to `.claude/agents/` (Coordinator, Capture, Maintain, Synthesis)
-- **1 skill** to `.claude/skills/` (entry point for Claude Code)
-- **CLI tool** (generates codemaps, installs git hook)
+- **3 agents** → `.claude/agents/` (Coordinator, Capture, Synthesis)
+- **1 skill** → `.claude/skills/`
+- **CLI** → `npm install -g context-layer`
 
-### Initial Build
+---
+
+## Commands
 
 In Claude Code:
 
-```
-> Build context layer for src/
-```
+| Command | What Happens |
+|---------|--------------|
+| `Build context layer` | Initial build or update (auto-detects) |
+| `Build context layer for src/` | Scoped to a directory |
+| `Update context layer` | Same as build (auto-detects) |
 
-The coordinator discovers systems, spawns capture agents in parallel, and runs synthesis.
-
-### What You Get
-
-```
-your-project/
-├── .context-layer/
-│   └── manifest.json          # Systems registry
-│
-├── AGENTS.md                  # Root node
-├── CLAUDE.md → AGENTS.md      # Symlink for Claude Code
-│
-└── src/
-    ├── AGENTS.md              # Parent node
-    │
-    ├── auth/
-    │   └── AGENTS.md          # Codemap + curated content
-    │
-    ├── api/
-    │   └── AGENTS.md
-    │
-    └── database/
-        └── AGENTS.md
-```
-
-### Auto-Maintenance
-
-After initial build, your context layer updates itself on every commit:
-
-```
-$ git commit -m "Add new feature"
-
-🧠 Context Layer: Processing commit...
-   ✓ Codemaps updated
-   → Changes detected, updating curated content with haiku...
-   ✓ Updated src/auth/AGENTS.md
-```
-
-**No manual intervention.** The git hook:
-1. Regenerates codemaps using tree-sitter (instant, free)
-2. Analyzes changes to determine if curated content needs updating
-3. Runs Haiku to update curated content automatically
-
-**To use Opus instead of Haiku:**
-```bash
-export CONTEXT_LAYER_MODEL=opus
-```
+**One command handles everything.** The coordinator agent checks for a manifest and decides whether this is an initial build or an update.
 
 ---
 
 ## How It Works
 
-### Two-Part AGENTS.md Structure
+### Initial Build (no manifest exists)
 
-Every AGENTS.md file has two sections:
+When you run `Build context layer` for the first time:
 
-| Section | Generated By | Updated |
-|---------|--------------|---------|
-| **Codemap** | CLI (tree-sitter) | Every commit (automatic) |
-| **Curated content** | LLM (Haiku/Opus) | When changes detected (automatic) |
-
-The codemap provides the API surface. The curated content provides what code can't express: ownership, invariants, boundaries.
-
-### Supported Languages
-
-| Language | Codemap Support |
-|----------|----------------|
-| TypeScript/TSX | ✅ |
-| JavaScript/JSX | ✅ |
-| Python | ✅ |
-| Swift | ✅ |
-
-### Subagent Architecture
-
-Context Layer uses specialized subagents for the initial build:
+1. **Coordinator agent** discovers systems in your codebase
+2. **Coordinator agent** spawns **one capture agent at a time** (sequential, not parallel)
+3. Each **capture agent**:
+   - Runs `context-layer codemap <path>` for API surface
+   - Reads all source files
+   - Writes `AGENTS.md` with codemap + curated content
+   - Uses **Opus** (initial builds always use Opus)
+4. After all captures, **synthesis agent** runs:
+   - Deduplicates shared knowledge to parent nodes
+   - Creates parent AGENTS.md files
+   - Updates manifest
 
 ```
-User: "Build context layer for src/"
-                    │
-                    ▼
-    ┌───────────────────────────────┐
-    │   COORDINATOR                 │
-    │   • Discovers "systems"       │
-    │   • Creates manifest          │
-    │   • Spawns capture agents     │
-    └───────────────────────────────┘
-                    │
-        ┌───────────┴───────────┐
-        ▼                       ▼
-    ┌─────────┐           ┌─────────┐
-    │ CAPTURE │    ...    │ CAPTURE │  ← Parallel, separate contexts
-    │ System1 │           │ SystemN │
-    └─────────┘           └─────────┘
-                    │
-                    ▼
-    ┌───────────────────────────────┐
-    │   SYNTHESIS                   │
-    │   • Deduplicates to LCA       │
-    │   • Creates parent nodes      │
-    │   • Adds downlinks            │
-    └───────────────────────────────┘
+📊 Initial Build
+
+Systems to Capture (5):
+1. src/services
+2. src/core
+3. src/api
+4. src/features/auth
+5. src/features/dashboard
+
+🎯 All systems → Opus (initial build)
+
+📍 [1/5] Capturing services (Opus)...
+✅ [1/5] services captured
+
+📍 [2/5] Capturing core (Opus)...
+✅ [2/5] core captured
+
+... continues sequentially ...
+
+✅ All 5 captures complete. Running synthesis...
 ```
 
-### Hierarchical Loading
+### Update (manifest exists)
 
-When an agent works in a directory, it automatically loads:
-1. The root `AGENTS.md`
-2. All ancestor nodes up to the working directory
-3. The node covering the current directory
+When you run `Build context layer` after the initial build:
 
-This gives agents a **T-shaped view**: broad context at the top, specific detail where they're working.
+1. **Coordinator agent** loads the manifest
+2. **Coordinator agent** runs `git diff` for each system since last capture
+3. **Coordinator agent** categorizes each system:
 
-### LCA Optimization
+| Change Type | Action | Model |
+|-------------|--------|-------|
+| No changes | Skip | — |
+| Minor edits (existing files) | Capture | **Haiku** |
+| New files added | Capture | **Opus** |
+| Major rewrites (>50% changed) | Capture | **Opus** |
+| New system detected | Capture | **Opus** |
 
-Shared knowledge is automatically deduplicated to the **Least Common Ancestor**:
+4. **Coordinator agent** spawns **capture agents sequentially** for systems that need updating
+5. **Synthesis agent** runs after all captures
 
 ```
-Before: Same fact in 3 leaf nodes (wasteful)
-After:  Fact moved to parent node (loads once)
+📊 Update Analysis
+
+Last captured: 2024-01-10 (commit abc123)
+Current: HEAD (commit def456)
+
+Systems Status:
+✅ src/services — No changes (skip)
+✅ src/core — No changes (skip)
+🔄 src/api — Minor edits → Haiku
+🆕 src/workers — New system → Opus
+🔄 src/features/auth — 3 new files → Opus
+
+Capturing 3 systems...
+
+📍 [1/3] Capturing api (Haiku)...
+✅ [1/3] api captured
+
+📍 [2/3] Capturing workers (Opus)...
+✅ [2/3] workers captured
+
+📍 [3/3] Capturing auth (Opus)...
+✅ [3/3] auth captured
+
+✅ All captures complete. Running synthesis...
 ```
 
 ---
 
-## CLI Commands
+## Architecture
 
-| Command | What It Does |
-|---------|--------------|
-| `context-layer init` | Initialize project, install git hook |
-| `context-layer codemap [path]` | Generate API surface using tree-sitter |
-| `context-layer status` | Show coverage and what's documented |
-| `context-layer analyze` | Analyze changes since last commit |
+```
+User: "Build context layer"
+            │
+            ▼
+┌─────────────────────────────┐
+│   COORDINATOR AGENT         │
+│   • Check for manifest      │
+│   • Discover systems        │
+│   • Diff changes per system │
+│   • Select model per system │
+│   • Spawn capture agents    │
+│     (one at a time)         │
+└─────────────────────────────┘
+            │
+            ▼ Sequential
+┌─────────────────────────────┐
+│   CAPTURE AGENT (per system)│
+│   • Run codemap CLI         │
+│   • Read all source files   │
+│   • Write AGENTS.md         │
+│   • Model: Opus or Haiku    │
+└─────────────────────────────┘
+            │
+            ▼
+┌─────────────────────────────┐
+│   SYNTHESIS AGENT           │
+│   • Deduplicate to parents  │
+│   • Create parent nodes     │
+│   • Add downlinks           │
+│   • Update manifest         │
+└─────────────────────────────┘
+```
+
+---
+
+## What Gets Created
+
+```
+project/
+├── .context-layer/
+│   └── manifest.json       # Tracks systems + last commit per system
+│
+├── src/
+│   ├── AGENTS.md           # Parent node
+│   ├── CLAUDE.md           # Symlink for Claude Code
+│   │
+│   ├── services/
+│   │   ├── AGENTS.md       # Codemap + curated content
+│   │   └── CLAUDE.md
+│   │
+│   └── core/
+│       ├── AGENTS.md
+│       └── CLAUDE.md
+```
+
+---
+
+## CLI
+
+The CLI provides tree-sitter codemap generation:
+
+```bash
+context-layer codemap [path]
+```
+
+**Supported languages:**
+- TypeScript/TSX
+- JavaScript/JSX
+- Python
+- Swift
+- Rust
+- Go
 
 ---
 
 ## Compatibility
 
-### Building the Context Layer
+**Building:** Requires Claude Code (uses agent spawning)
 
-**Requires Claude Code.** The subagent architecture (Coordinator → Capture → Synthesis) uses Claude Code's agent spawning capabilities.
-
-### Using the Context Layer
-
-Once built, the `AGENTS.md` files work with **any AI tool** that loads context files:
-
-- ✅ Claude Code (loads `CLAUDE.md` automatically)
-- ✅ OpenAI Codex (loads `AGENTS.md` automatically)  
-- ✅ Cursor (loads `AGENTS.md` from project directories)
-- ✅ GitHub Copilot
-- ✅ Windsurf
-- ✅ Amp
-- ✅ Goose
+**Using:** Once built, `AGENTS.md` files work with any AI tool:
+- Claude Code, Cursor, Copilot, Windsurf, Codex, etc.
 
 ---
 
-## File Convention
+## Credits
 
-| File | Purpose | Tool Support |
-|------|---------|--------------|
-| `AGENTS.md` | Primary context file | Codex, most tools |
-| `CLAUDE.md` | Symlink to AGENTS.md | Claude Code |
-
-The installer creates symlinks automatically. To create one manually:
-
-```bash
-ln -s AGENTS.md CLAUDE.md
-```
-
----
-
-## Philosophy
-
-Context Layer is inspired by Tyler Brandt's excellent article [The Intent Layer](https://www.intent-systems.com/learn/intent-layer) from Intent Systems. The core ideas:
-
-1. **Compress context**: Distill large areas into minimal, high-signal tokens
-2. **Surface hidden knowledge**: Capture what code can't express
-3. **Self-maintaining**: Auto-update on every commit
-4. **Least Common Ancestor**: Shared knowledge lives at the shallowest covering node
-
----
-
-## Contributing
-
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
+Inspired by [The Intent Layer](https://www.intent-systems.com/learn/intent-layer) by Tyler Brandt.
 
 ## License
 
-MIT © [Context Layer Contributors](LICENSE)
+MIT

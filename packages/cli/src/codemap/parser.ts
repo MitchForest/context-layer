@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export interface Signature {
   name: string;
-  kind: 'function' | 'class' | 'interface' | 'type' | 'enum' | 'struct' | 'protocol' | 'variable';
+  kind: 'function' | 'class' | 'interface' | 'type' | 'enum' | 'struct' | 'protocol' | 'variable' | 'trait';
   signature: string;
   exported: boolean;
 }
@@ -17,6 +17,8 @@ let typescriptLanguage: Language | null = null;
 let tsxLanguage: Language | null = null;
 let swiftLanguage: Language | null = null;
 let pythonLanguage: Language | null = null;
+let rustLanguage: Language | null = null;
+let goLanguage: Language | null = null;
 
 const wasmDir = path.join(__dirname, '..', '..', 'wasm');
 
@@ -40,6 +42,14 @@ export async function initParser(): Promise<void> {
   
   try {
     pythonLanguage = await Language.load(path.join(wasmDir, 'tree-sitter-python.wasm'));
+  } catch { /* Optional */ }
+  
+  try {
+    rustLanguage = await Language.load(path.join(wasmDir, 'tree-sitter-rust.wasm'));
+  } catch { /* Optional */ }
+  
+  try {
+    goLanguage = await Language.load(path.join(wasmDir, 'tree-sitter-go.wasm'));
   } catch { /* Optional */ }
   
   initialized = true;
@@ -239,6 +249,142 @@ export async function parsePython(content: string): Promise<Signature[]> {
   }
   
   walk(tree.rootNode, 0);
+  return signatures;
+}
+
+export async function parseRust(content: string): Promise<Signature[]> {
+  if (!rustLanguage) return [];
+  
+  const parser = new Parser();
+  parser.setLanguage(rustLanguage);
+  const tree = parser.parse(content);
+  if (!tree) return [];
+  
+  const signatures: Signature[] = [];
+  
+  function walk(node: SyntaxNode) {
+    // Skip private items (no pub keyword)
+    const nodeText = node.text;
+    const isPublic = nodeText.startsWith('pub ');
+    
+    switch (node.type) {
+      case 'function_item': {
+        const name = node.childForFieldName('name')?.text ?? '';
+        const params = node.childForFieldName('parameters')?.text ?? '()';
+        const returnType = node.childForFieldName('return_type')?.text ?? '';
+        
+        let sig = isPublic ? 'pub fn ' : 'fn ';
+        sig += `${name}${params}`;
+        if (returnType) sig += ` ${returnType}`;
+        
+        signatures.push({ name, kind: 'function', signature: sig, exported: isPublic });
+        break;
+      }
+      
+      case 'struct_item': {
+        const name = node.childForFieldName('name')?.text ?? '';
+        const sig = isPublic ? `pub struct ${name}` : `struct ${name}`;
+        signatures.push({ name, kind: 'struct', signature: sig, exported: isPublic });
+        break;
+      }
+      
+      case 'enum_item': {
+        const name = node.childForFieldName('name')?.text ?? '';
+        const sig = isPublic ? `pub enum ${name}` : `enum ${name}`;
+        signatures.push({ name, kind: 'enum', signature: sig, exported: isPublic });
+        break;
+      }
+      
+      case 'trait_item': {
+        const name = node.childForFieldName('name')?.text ?? '';
+        const sig = isPublic ? `pub trait ${name}` : `trait ${name}`;
+        signatures.push({ name, kind: 'trait', signature: sig, exported: isPublic });
+        break;
+      }
+      
+      case 'impl_item': {
+        // Skip impl blocks, we just want the types
+        return;
+      }
+    }
+    
+    for (const child of node.children) {
+      walk(child);
+    }
+  }
+  
+  walk(tree.rootNode);
+  return signatures;
+}
+
+export async function parseGo(content: string): Promise<Signature[]> {
+  if (!goLanguage) return [];
+  
+  const parser = new Parser();
+  parser.setLanguage(goLanguage);
+  const tree = parser.parse(content);
+  if (!tree) return [];
+  
+  const signatures: Signature[] = [];
+  
+  function walk(node: SyntaxNode) {
+    switch (node.type) {
+      case 'function_declaration': {
+        const name = node.childForFieldName('name')?.text ?? '';
+        const params = node.childForFieldName('parameters')?.text ?? '()';
+        const result = node.childForFieldName('result')?.text ?? '';
+        
+        // In Go, exported = starts with uppercase
+        const isExported = name.length > 0 && name[0] === name[0].toUpperCase();
+        
+        let sig = `func ${name}${params}`;
+        if (result) sig += ` ${result}`;
+        
+        signatures.push({ name, kind: 'function', signature: sig, exported: isExported });
+        break;
+      }
+      
+      case 'method_declaration': {
+        const name = node.childForFieldName('name')?.text ?? '';
+        const receiver = node.childForFieldName('receiver')?.text ?? '';
+        const params = node.childForFieldName('parameters')?.text ?? '()';
+        const result = node.childForFieldName('result')?.text ?? '';
+        
+        const isExported = name.length > 0 && name[0] === name[0].toUpperCase();
+        
+        let sig = `func ${receiver} ${name}${params}`;
+        if (result) sig += ` ${result}`;
+        
+        signatures.push({ name, kind: 'function', signature: sig, exported: isExported });
+        break;
+      }
+      
+      case 'type_declaration': {
+        for (const spec of node.children) {
+          if (spec.type === 'type_spec') {
+            const name = spec.childForFieldName('name')?.text ?? '';
+            const typeNode = spec.childForFieldName('type');
+            const isExported = name.length > 0 && name[0] === name[0].toUpperCase();
+            
+            if (typeNode?.type === 'struct_type') {
+              signatures.push({ name, kind: 'struct', signature: `type ${name} struct`, exported: isExported });
+            } else if (typeNode?.type === 'interface_type') {
+              signatures.push({ name, kind: 'interface', signature: `type ${name} interface`, exported: isExported });
+            } else {
+              signatures.push({ name, kind: 'type', signature: `type ${name}`, exported: isExported });
+            }
+          }
+        }
+        break;
+      }
+    }
+    
+    for (const child of node.children) {
+      walk(child);
+    }
+  }
+  
+  walk(tree.rootNode);
   return signatures;
 }
 

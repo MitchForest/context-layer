@@ -1,6 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { initParser, parseTypeScript, parseSwift, parsePython, Signature } from './parser.js';
+import { initParser, parseTypeScript, parseSwift, parsePython, parseRust, parseGo, Signature } from './parser.js';
 
 export { Signature };
 
@@ -27,7 +27,7 @@ export async function generateCodemap(dirPath: string): Promise<string> {
 }
 
 async function getSourceFiles(dirPath: string): Promise<string[]> {
-  const extensions = ['.ts', '.tsx', '.swift', '.py', '.js', '.jsx'];
+  const extensions = ['.ts', '.tsx', '.swift', '.py', '.js', '.jsx', '.rs', '.go'];
   const excludePatterns = ['test', 'Test', '__tests__', 'spec', '.d.ts', '_generated', 'node_modules'];
   
   const files: string[] = [];
@@ -86,6 +86,14 @@ async function parseFile(filePath: string): Promise<FileCodemap | null> {
     case '.py':
       language = 'python';
       signatures = await parsePython(content);
+      break;
+    case '.rs':
+      language = 'rust';
+      signatures = await parseRust(content);
+      break;
+    case '.go':
+      language = 'go';
+      signatures = await parseGo(content);
       break;
     default:
       return null;
