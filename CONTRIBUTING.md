@@ -64,8 +64,6 @@ Test your changes using **Claude Code**:
 3. Verify the agents follow the instructions correctly
 4. Check that resulting AGENTS.md files are properly structured
 
-> **Note**: The subagent architecture requires Claude Code. Cursor support is experimental.
-
 ## Pull Request Process
 
 1. Fork the repo

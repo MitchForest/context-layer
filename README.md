@@ -183,12 +183,7 @@ Total overhead: 10-15k tokens for a complete Context Layer on a large monorepo.
 
 ### Building the Context Layer
 
-**Use Claude Code** to build and maintain your Context Layer. The subagent architecture (Coordinator → Capture → Synthesis) requires Claude Code's agent spawning capabilities.
-
-| Platform | Build Support | Notes |
-|----------|---------------|-------|
-| **Claude Code** | ✅ Tested | Full support for subagent spawning |
-| **Cursor** | 🧪 Experimental | Has `.cursor/agents` but docs not finalized yet ([more info coming soon](https://forum.cursor.com)) |
+**Requires Claude Code.** The subagent architecture (Coordinator → Capture → Synthesis) uses Claude Code's agent spawning capabilities.
 
 ### Using the Context Layer
 
@@ -202,7 +197,7 @@ Once built, the `AGENTS.md` files work with **any AI tool** that loads context f
 - ✅ Amp
 - ✅ Goose
 
-**Workflow**: Use Claude Code to create/maintain your Context Layer, then any agent of your choosing benefits from the hierarchical `AGENTS.md` files.
+**Workflow**: Use Claude Code to build your Context Layer, then any agent benefits from the hierarchical `AGENTS.md` files.
 
 ---
 

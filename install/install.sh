@@ -12,29 +12,11 @@ REPO_URL="https://raw.githubusercontent.com/MitchForest/context-layer/main"
 echo "🧠 Installing Context Layer..."
 echo ""
 
-# Detect platform
-if [ -d ".cursor" ]; then
-  echo "📍 Detected: Cursor"
-  echo ""
-  echo "⚠️  Note: Cursor's .cursor/agents support is experimental."
-  echo "   For best results, use Claude Code to build your Context Layer."
-  echo "   The resulting AGENTS.md files will work in Cursor."
-  echo ""
-  AGENTS_DIR=".cursor/agents"
-  SKILL_DIR=".cursor/skills"
-  PLATFORM="Cursor (experimental)"
-elif [ -d ".claude" ] || command -v claude &> /dev/null; then
-  AGENTS_DIR=".claude/agents"
-  SKILL_DIR=".claude/skills"
-  PLATFORM="Claude Code"
-else
-  # Default to Claude Code structure
-  AGENTS_DIR=".claude/agents"
-  SKILL_DIR=".claude/skills"
-  PLATFORM="Claude Code"
-fi
+# Always install to Claude Code directory
+AGENTS_DIR=".claude/agents"
+SKILL_DIR=".claude/skills"
 
-echo "📍 Platform: $PLATFORM"
+echo "📍 Installing for Claude Code"
 echo "📁 Agents: $AGENTS_DIR"
 echo "📁 Skills: $SKILL_DIR"
 echo ""
@@ -88,19 +70,16 @@ fi
 # Create CLAUDE.md symlinks for any existing AGENTS.md files
 echo ""
 echo "🔗 Creating CLAUDE.md symlinks for existing AGENTS.md files..."
-symlink_count=0
 find . -name "AGENTS.md" \
   -not -path "./.git/*" \
   -not -path "./node_modules/*" \
   -not -path "./.claude/*" \
-  -not -path "./.cursor/*" \
   -not -path "./.context-layer/*" \
   2>/dev/null | while read f; do
   dir=$(dirname "$f")
   if [ ! -e "$dir/CLAUDE.md" ]; then
     (cd "$dir" && ln -s AGENTS.md CLAUDE.md)
     echo "   ✓ $dir/CLAUDE.md"
-    symlink_count=$((symlink_count + 1))
   fi
 done
 
