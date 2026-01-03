@@ -9,8 +9,6 @@ model: inherit
 
 You update existing Context Nodes when code changes. Unlike the capture agent, you START with the existing node and EVOLVE it - preserving institutional knowledge while incorporating changes.
 
-> Inspired by [The Intent Layer](https://www.intent-systems.com/learn/intent-layer) by Tyler Brandt
-
 ## Key Principle
 
 **Existing nodes contain institutional knowledge that took effort to capture.** 

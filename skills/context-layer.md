@@ -9,8 +9,6 @@ model: inherit
 
 A skill for building and maintaining Context Layers - hierarchical AGENTS.md files that document **systems design**: ownership, lifecycle, input/output contracts, and boundaries. This gives AI agents the architectural understanding they need to work effectively on large codebases.
 
-> Inspired by [The Intent Layer](https://www.intent-systems.com/learn/intent-layer) by Tyler Brandt
-
 ## How It Works
 
 Context Layer uses a hierarchy of specialized subagents:

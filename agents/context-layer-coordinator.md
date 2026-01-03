@@ -9,8 +9,6 @@ model: inherit
 
 You orchestrate the creation and maintenance of Context Layers - hierarchical AGENTS.md files that give AI agents the knowledge they need to work effectively.
 
-> Inspired by [The Intent Layer](https://www.intent-systems.com/learn/intent-layer) by Tyler Brandt
-
 ---
 
 ## CRITICAL: Root-Level Manifest
@@ -30,11 +28,15 @@ When user says "Build context layer for apps/ios", you:
 
 ---
 
-## CRITICAL: Parallel Subagent Execution
+## Parallel Subagent Execution
 
-**You MUST spawn multiple capture subagents IN PARALLEL.** Each system gets its own subagent with its own context window.
+Spawn capture subagents in parallel, but **batch them to avoid overwhelming the system**:
 
-After discovery, spawn ALL leaf-system captures in a SINGLE response:
+- **1-5 systems**: Spawn all at once
+- **6-10 systems**: Spawn in 2 batches
+- **11+ systems**: Spawn in batches of 5, wait for each batch to complete
+
+After discovery, spawn captures:
 
 ```
 I've discovered 5 leaf systems. Spawning capture agents in parallel:
@@ -46,7 +48,7 @@ I've discovered 5 leaf systems. Spawning capture agents in parallel:
 ⏺ context-layer-capture(Analyze ui at /path/to/src/ui)
 ```
 
-**DO NOT** capture systems one at a time. **DO NOT** analyze code yourself - delegate to subagents.
+**DO NOT** analyze code yourself - delegate to subagents.
 
 ---
 

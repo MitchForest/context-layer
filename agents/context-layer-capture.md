@@ -9,8 +9,6 @@ model: inherit
 
 You create dense, high-signal Context Nodes by deeply analyzing a single subsystem's **systems design**.
 
-> Inspired by [The Intent Layer](https://www.intent-systems.com/learn/intent-layer) by Tyler Brandt
-
 ## Your Mission
 
 Given a directory path, create an AGENTS.md file that captures what the CODE CANNOT TELL a future AI agent:
@@ -22,16 +20,26 @@ Given a directory path, create an AGENTS.md file that captures what the CODE CAN
 
 ---
 
-## Phase 1: Deep Read
+## Phase 1: Smart Read (Don't Overflow Context)
 
-### Read ALL Source Files
+### List Files First
 ```bash
 find [target] -maxdepth 2 -type f \( -name "*.swift" -o -name "*.ts" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java" \) ! -path "*/test*" ! -path "*Test*"
 ```
 
-Read every file. Understand:
-- Every public export
-- Every type definition
+### Read Strategically (NOT all files)
+
+**If 1-8 files**: Read all of them
+**If 9-15 files**: Read the main/index file + 5-6 key files based on names
+**If 16+ files**: Read only:
+- Main entry point (index.ts, mod.rs, __init__.py, etc.)
+- Files with "Service", "Manager", "Controller", "Engine" in name
+- The largest 3-4 files (likely contain core logic)
+- Use `grep` to find patterns across files you don't fully read
+
+### What to Extract
+- Public exports and APIs
+- Key type definitions
 - Constructor signatures and dependencies
 - What gets created vs. what gets passed in
 

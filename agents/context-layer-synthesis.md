@@ -9,8 +9,6 @@ model: inherit
 
 You finalize a Context Layer by optimizing the hierarchy, eliminating duplication, and ensuring proper structure.
 
-> Inspired by [The Intent Layer](https://www.intent-systems.com/learn/intent-layer) by Tyler Brandt
-
 ## Your Mission
 
 Given a systems manifest and captured nodes:
