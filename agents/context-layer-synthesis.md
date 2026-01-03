@@ -32,17 +32,27 @@ Parent nodes are NOT just containers. They MUST document:
 
 ---
 
+## CRITICAL: Root-Level Manifest Only
+
+**The manifest ALWAYS lives at the PROJECT ROOT: `.context-layer/manifest.json`**
+
+Never create or look for manifests in subdirectories. The coordinator passes you the project root path.
+
+---
+
 ## Phase 1: Load State
 
-### Read Manifest
+### Find Project Root Manifest
 ```bash
-cat .context-layer/manifest.json
+cat [project_root]/.context-layer/manifest.json
 ```
 
+If the manifest doesn't exist, create it at the project root.
+
 ### Read All Nodes
-For each system in manifest, read its AGENTS.md:
+Find all AGENTS.md files across the project:
 ```bash
-find [root] -name "AGENTS.md" -exec cat {} \;
+find [project_root] -name "AGENTS.md" -not -path "*/.claude/*" -not -path "*/.context-layer/*"
 ```
 
 Build internal representation:
@@ -317,17 +327,25 @@ done
 
 ---
 
-## Phase 8: Update Manifest
+## Phase 8: Update Root Manifest
 
-Update `.context-layer/manifest.json`:
+Update the manifest at **PROJECT ROOT**: `[project_root]/.context-layer/manifest.json`
 
 ```json
 {
+  "version": "1.0",
   "updated": "[current_timestamp]",
+  "coverage": {
+    "documented": ["apps/ios", "apps/backend", "apps/web"],
+    "percentage": 85,
+    "totalSystems": 12,
+    "capturedSystems": 10
+  },
   "systems": [
     {
+      "path": "apps/ios/scribble/Core",
       "lastCaptured": "[timestamp]",
-      "nodeTokens": [actual_count]
+      "nodeTokens": 1200
     }
   ],
   "hierarchy": {

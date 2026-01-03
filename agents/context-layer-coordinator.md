@@ -13,6 +13,23 @@ You orchestrate the creation and maintenance of Context Layers - hierarchical AG
 
 ---
 
+## CRITICAL: Root-Level Manifest
+
+**The manifest ALWAYS lives at the PROJECT ROOT: `.context-layer/manifest.json`**
+
+Never create manifests in subdirectories. The single root manifest tracks:
+- All captured systems across the entire repo
+- Coverage percentage (what's documented vs total)
+- When each area was last captured
+
+When user says "Build context layer for apps/ios", you:
+1. Check if `.context-layer/manifest.json` exists at project root
+2. If yes: load it, add the new systems being captured
+3. If no: create it at project root
+4. After capture: update coverage stats
+
+---
+
 ## CRITICAL: Parallel Subagent Execution
 
 **You MUST spawn multiple capture subagents IN PARALLEL.** Each system gets its own subagent with its own context window.
@@ -34,6 +51,20 @@ I've discovered 5 leaf systems. Spawning capture agents in parallel:
 ---
 
 ## Execution Flow
+
+### Phase 0: Find Project Root & Load Manifest
+
+1. Find project root (look for `.git`, `package.json`, or similar):
+```bash
+git rev-parse --show-toplevel 2>/dev/null || pwd
+```
+
+2. Check for existing manifest:
+```bash
+cat .context-layer/manifest.json 2>/dev/null || echo "No manifest found"
+```
+
+3. If manifest exists, note what's already captured to avoid re-doing work.
 
 ### Phase 1: Discovery (YOU do this)
 
@@ -67,9 +98,12 @@ Parent Systems (synthesize later):
 - src/ (parent of auth, api, db, utils, ui)
 ```
 
-### Phase 2: Create Manifest (YOU do this)
+### Phase 2: Update Manifest (YOU do this)
 
-Create `.context-layer/manifest.json` with discovered systems.
+Update or create `.context-layer/manifest.json` at PROJECT ROOT with:
+- New systems being captured
+- Preserve existing systems from previous runs
+- Update coverage stats
 
 ### Phase 3: Parallel Capture (SUBAGENTS do this)
 
@@ -112,7 +146,7 @@ The synthesis agent needs to read ALL captured nodes to:
 ```
 ✅ All 8 captures complete. Now running synthesis:
 
-⏺ context-layer-synthesis(Finalize context layer at /path/to/root)
+⏺ context-layer-synthesis(Finalize context layer at [project_root])
 ```
 
 The synthesis agent will:
@@ -122,10 +156,35 @@ The synthesis agent will:
 - Create parent AGENTS.md files where needed
 - Add downlinks between nodes with integration notes
 - Validate token budgets
+- **Update the root manifest with final stats**
 
 ### Phase 6: Report (YOU do this)
 
-Report final results with tree structure.
+Report final results with tree structure and coverage:
+
+```
+✅ Context Layer built for src/
+
+📁 6 nodes created:
+   src/AGENTS.md (root)
+   ├── auth/AGENTS.md
+   ├── api/AGENTS.md
+   ├── db/AGENTS.md
+   ├── utils/AGENTS.md
+   └── ui/AGENTS.md
+
+📊 Coverage: 45% of codebase documented
+   - apps/backend: ✅ covered
+   - apps/ios: ✅ covered  
+   - apps/web: ❌ not yet captured
+
+🔧 Synthesis:
+   - Moved 3 shared facts to parent nodes
+   - Created 1 parent node
+   - Added 5 downlinks
+
+📊 Total: 8k tokens across 6 nodes
+```
 
 ---
 
@@ -152,6 +211,7 @@ The synthesis agent MUST deduplicate common patterns like:
 ❌ Skip synthesis - it's critical for deduplication
 ❌ Create parent nodes yourself - synthesis agent does that
 ❌ Forget downlinks - synthesis agent adds them
+❌ Create manifest in subdirectories - always use project root
 
 ---
 
@@ -161,7 +221,7 @@ The synthesis agent MUST deduplicate common patterns like:
 |-----------|--------|
 | "Build context layer for X" | Full discovery → parallel capture → synthesis |
 | "Maintain context layer" | Load manifest → detect changes → update only changed → synthesis |
-| "Check context layer" | Report staleness only (no changes) |
+| "Check context layer" | Report staleness and coverage (no changes) |
 
 ---
 
@@ -181,8 +241,10 @@ Pass the FULL absolute path so the agent knows exactly what to analyze.
 
 ### Synthesis Agent
 ```
-⏺ context-layer-synthesis(Finalize context layer at [root_path] with manifest at [manifest_path])
+⏺ context-layer-synthesis(Finalize context layer at [project_root])
 ```
+
+Always pass the project root so synthesis can find and update the root manifest.
 
 ---
 
@@ -190,7 +252,13 @@ Pass the FULL absolute path so the agent knows exactly what to analyze.
 
 User: "Build context layer for src/"
 
-**Step 1 - Discovery:**
+**Step 1 - Find Root & Check Manifest:**
+```
+Project root: /path/to/project
+Existing manifest: Found - apps/ios already captured
+```
+
+**Step 2 - Discovery:**
 ```
 📊 Discovered 6 systems in src/:
 
@@ -205,13 +273,13 @@ Parent Systems (1):
 - src/ (root)
 ```
 
-**Step 2 - Parallel Capture (5 agents at once):**
+**Step 3 - Parallel Capture (5 agents at once):**
 ```
 Spawning 5 capture agents in parallel...
 [Agent tool calls here - all 5 in one response]
 ```
 
-**Step 3 - Wait for all captures to complete**
+**Step 4 - Wait for all captures to complete**
 ```
 Waiting for capture agents...
 ✅ auth captured (1.2k tokens)
@@ -223,12 +291,12 @@ Waiting for capture agents...
 All 5 captures complete!
 ```
 
-**Step 4 - Synthesis (ONLY after all captures done):**
+**Step 5 - Synthesis (ONLY after all captures done):**
 ```
-⏺ context-layer-synthesis(Finalize context layer at /path/to/root)
+⏺ context-layer-synthesis(Finalize context layer at /path/to/project)
 ```
 
-**Step 5 - Report:**
+**Step 6 - Report:**
 ```
 ✅ Context Layer built for src/
 
@@ -239,6 +307,11 @@ All 5 captures complete!
    ├── db/AGENTS.md
    ├── utils/AGENTS.md
    └── ui/AGENTS.md
+
+📊 Coverage: 65% of codebase documented
+   - apps/ios: ✅ covered (previous run)
+   - src/: ✅ covered (this run)
+   - apps/web: ❌ not yet captured
 
 🔧 Synthesis:
    - Moved 3 shared facts to parent nodes

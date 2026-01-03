@@ -44,27 +44,20 @@ echo "📥 Downloading skill..."
 curl -sL "$REPO_URL/skills/context-layer.md" -o "$SKILL_DIR/context-layer.md"
 echo "   ✓ context-layer skill"
 
-# Create initial manifest if it doesn't exist
-if [ ! -f ".context-layer/manifest.json" ]; then
-  echo ""
-  echo "📋 Creating initial manifest..."
-  cat > .context-layer/manifest.json << 'EOF'
-{
-  "version": "1.0",
-  "created": null,
-  "updated": null,
-  "root": null,
-  "systems": [],
-  "hierarchy": {},
-  "synthesis": {
-    "lastRun": null,
-    "factsDeduped": 0,
-    "nodesCreated": 0,
-    "symlinksCreated": 0
-  }
-}
-EOF
-  echo "   ✓ .context-layer/manifest.json"
+# Create .context-layer directory (manifest created by agents on first run)
+mkdir -p .context-layer
+echo ""
+echo "📋 Created .context-layer/ (manifest will be created on first build)"
+
+# Add .context-layer to .gitignore if not already there
+if [ -f ".gitignore" ]; then
+  if ! grep -q "^\.context-layer" .gitignore; then
+    echo ".context-layer/" >> .gitignore
+    echo "   ✓ Added .context-layer/ to .gitignore"
+  fi
+else
+  echo ".context-layer/" > .gitignore
+  echo "   ✓ Created .gitignore with .context-layer/"
 fi
 
 # Create CLAUDE.md symlinks for any existing AGENTS.md files
