@@ -109,21 +109,20 @@ find [target] -type d -maxdepth 3 | head -50
 3. Output your discovery with SKIP reasons:
 
 ```
-📊 System Discovery for apps/ios/scribble
+📊 System Discovery for src/
 
-Systems to Capture (8):
-1. Services/ - Business logic services
-2. Core/ - Engines and validation
-3. Features/Auth - Authentication flow
-4. Features/Home - Home screen logic
-5. Features/Lesson - Lesson flow
-6. Features/Review - Review flow
-7. Features/Onboarding - Onboarding flow
-8. Application/ - App lifecycle
+Systems to Capture (6):
+1. services/ - Business logic services
+2. core/ - Domain logic and algorithms
+3. features/auth - Authentication flow
+4. features/dashboard - Dashboard logic
+5. api/ - API layer
+6. workers/ - Background jobs
 
 Skipping (not functional systems):
-- UI/Theme - Just colors/fonts
-- UI/Components - Presentational only
+- ui/theme - Just colors/fonts
+- ui/components - Presentational only
+- models/ - Data types only
 ```
 
 ### Phase 2: Update Manifest (YOU do this)
@@ -136,8 +135,8 @@ Create or update `.context-layer/manifest.json` at PROJECT ROOT:
   "repo": "project-name",
   "systems": [],
   "pendingSystems": [
-    { "path": "apps/ios/scribble/Services", "name": "Services" },
-    { "path": "apps/ios/scribble/Core", "name": "Core" }
+    { "path": "src/services", "name": "services" },
+    { "path": "src/core", "name": "core" }
   ],
   "lastUpdated": "2024-01-15T10:30:00Z"
 }
@@ -185,27 +184,26 @@ Only after ALL captures complete:
 ### Phase 5: Report (YOU do this)
 
 ```
-✅ Context Layer built for apps/ios/scribble
+✅ Context Layer built for src/
 
-📁 9 nodes created:
-   apps/ios/scribble/AGENTS.md (root)
-   ├── Services/AGENTS.md
-   ├── Core/AGENTS.md
-   └── Features/
-       ├── Auth/AGENTS.md
-       ├── Home/AGENTS.md
-       ├── Lesson/AGENTS.md
-       ├── Review/AGENTS.md
-       └── Onboarding/AGENTS.md
+📁 7 nodes created:
+   src/AGENTS.md (root)
+   ├── services/AGENTS.md
+   ├── core/AGENTS.md
+   ├── api/AGENTS.md
+   ├── workers/AGENTS.md
+   └── features/
+       ├── auth/AGENTS.md
+       └── dashboard/AGENTS.md
 
-📊 Coverage: 45% of codebase documented
+📊 Coverage: 60% of codebase documented
 
 🔧 Synthesis:
    - Moved 3 shared facts to parent nodes
    - Created 1 parent node
    - Added 5 downlinks
 
-📊 Total: ~10k tokens across 9 nodes
+📊 Total: ~8k tokens across 7 nodes
 ```
 
 ---
@@ -249,57 +247,55 @@ Only after ALL captures complete:
 
 ---
 
-## Example: iOS App
+## Example
 
-User: "Build context layer for apps/ios/scribble"
+User: "Build context layer for src/"
 
 **Phase 1 - Discovery:**
 ```
-📊 System Discovery for apps/ios/scribble
+📊 System Discovery for src/
 
-Systems to Capture (8):
-1. Services/ - SyncService, ConvexService, etc.
-2. Core/ - Engines, validation, prompts
-3. Features/Auth - PIN entry, device registration
-4. Features/Home - Student selection, dashboard
-5. Features/Lesson - Lesson flow, practice
-6. Features/Review - Review sessions
-7. Features/Onboarding - First-time setup
-8. Application/ - App lifecycle, SwiftData
+Systems to Capture (5):
+1. services/ - AuthService, UserService, etc.
+2. core/ - Domain logic, algorithms
+3. api/ - REST endpoints, handlers
+4. features/auth - Authentication flow
+5. features/dashboard - Dashboard logic
 
 Skipping:
-- UI/Theme - Colors, fonts, spacing only
-- UI/Components - Presentational components
+- ui/theme - Colors, fonts, spacing only
+- ui/components - Presentational components
+- models/ - Data types only
 ```
 
 **Phase 2 - Sequential Capture:**
 ```
-📍 [1/8] Capturing Services...
-⏺ context-layer-capture(Analyze Services at /path/to/apps/ios/scribble/Services)
-✅ [1/8] Services captured (1.5k tokens)
+📍 [1/5] Capturing services...
+⏺ context-layer-capture(Analyze services at /path/to/src/services)
+✅ [1/5] services captured (1.5k tokens)
 
-📍 [2/8] Capturing Core...
-⏺ context-layer-capture(Analyze Core at /path/to/apps/ios/scribble/Core)
-✅ [2/8] Core captured (1.8k tokens)
+📍 [2/5] Capturing core...
+⏺ context-layer-capture(Analyze core at /path/to/src/core)
+✅ [2/5] core captured (1.8k tokens)
 
-📍 [3/8] Capturing Features/Auth...
-⏺ context-layer-capture(Analyze Auth at /path/to/apps/ios/scribble/Features/Auth)
-✅ [3/8] Auth captured (1.2k tokens)
+📍 [3/5] Capturing api...
+⏺ context-layer-capture(Analyze api at /path/to/src/api)
+✅ [3/5] api captured (1.2k tokens)
 
-... continues for all 8 ...
+... continues for all 5 ...
 ```
 
 **Phase 3 - Synthesis:**
 ```
-✅ All 8 captures complete. Running synthesis...
+✅ All 5 captures complete. Running synthesis...
 ⏺ context-layer-synthesis(Finalize context layer at /path/to/project)
 ```
 
 **Phase 4 - Report:**
 ```
-✅ Context Layer built for apps/ios/scribble
+✅ Context Layer built for src/
 
-📁 9 nodes created
+📁 6 nodes created
 📊 Coverage: 60% of codebase
-📊 Total: ~12k tokens
+📊 Total: ~8k tokens
 ```

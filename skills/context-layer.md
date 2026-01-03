@@ -44,7 +44,7 @@ Context Layer uses a hierarchy of specialized subagents:
 
 ### Build Mode (from scratch)
 
-> "Build context layer for apps/ios"
+> "Build context layer for src/"
 
 Creates a complete Context Layer:
 1. Coordinator discovers all systems
@@ -72,7 +72,7 @@ Reports on staleness without making changes.
 
 ### Single System
 
-> "Capture context for apps/ios/scribble/Core/Validation"
+> "Capture context for src/core/validation"
 
 Captures just one system (uses capture agent directly).
 

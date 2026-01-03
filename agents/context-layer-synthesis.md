@@ -353,14 +353,14 @@ Update the manifest at **PROJECT ROOT**: `[project_root]/.context-layer/manifest
   "version": "1.0",
   "updated": "[current_timestamp]",
   "coverage": {
-    "documented": ["apps/ios", "apps/backend", "apps/web"],
+    "documented": ["src/services", "src/core", "src/api"],
     "percentage": 85,
     "totalSystems": 12,
     "capturedSystems": 10
   },
   "systems": [
     {
-      "path": "apps/ios/scribble/Core",
+      "path": "src/core",
       "lastCaptured": "[timestamp]",
       "nodeTokens": 1200
     }
@@ -397,7 +397,7 @@ Update the manifest at **PROJECT ROOT**: `[project_root]/.context-layer/manifest
 📁 Hierarchy:
    ✅ Created Core/AGENTS.md (parent of 3 systems)
    ✅ Created src/AGENTS.md (parent of 5 systems)
-   ✅ Updated apps/ios/AGENTS.md (root)
+   ✅ Updated src/AGENTS.md (root)
    ✅ Added downlinks to 5 nodes
 
 📏 Token Budgets:
