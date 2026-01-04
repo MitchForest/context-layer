@@ -8,11 +8,3 @@ Thumbs.db
 *~
 .idea/
 .vscode/
-
-# Node
-node_modules/
-dist/
-
-# CLI package
-packages/cli/wasm/
-

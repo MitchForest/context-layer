@@ -2,7 +2,7 @@
 name: context-layer-coordinator
 description: Orchestrates building and updating Context Layers. Use when asked to "build context layer" or "update context layer". Handles both initial builds and incremental updates automatically.
 tools: Read, Write, Glob, Grep, Bash, Agent
-model: inherit
+model: opus
 ---
 
 # Context Layer Coordinator
@@ -23,7 +23,7 @@ You orchestrate Context Layers - hierarchical AGENTS.md files that give AI agent
 ✅ [1/5] services captured
 
 📍 [2/5] Capturing core...
-⏺ context-layer-capture(Analyze core at /path --model haiku)
+⏺ context-layer-capture(Analyze core at /path --model opus)
 ✅ [2/5] core captured
 ```
 
@@ -48,21 +48,21 @@ cat "$PROJECT_ROOT/.context-layer/manifest.json" 2>/dev/null || echo "NO_MANIFES
 ### Discover Systems
 
 ```bash
-find [target] -type d -maxdepth 3 | head -50
+find [target] -type d -maxdepth 4
 ```
 
-Apply heuristics to identify systems worth documenting:
+Apply heuristics to identify **functional systems** worth documenting:
 
-**✅ CAPTURE:**
-- `Services/`, `Core/`, `Features/*`, `API/`, `Domain/`
-- Directories with Service, Engine, Manager, Controller files
-- Has business logic, state machines, algorithms
+**✅ CAPTURE (has business logic, state, algorithms):**
+- `Services/`, `Core/`, `Domain/`, `API/`, `Engine/`
+- Directories with Service, Engine, Manager, Controller, Repository files
+- Has state machines, validation logic, business rules
 
-**❌ SKIP:**
-- `Theme/`, `Components/` (presentational)
-- `Models/`, `Types/` (data only)
-- `Utils/`, `Helpers/` (simple utilities)
-- `Tests/`, `Generated/`, `Assets/`
+**❌ SKIP (presentational, data-only, infrastructure):**
+- `Theme/`, `Components/`, `UI/` (presentational)
+- `Models/`, `Types/`, `DTOs/` (data structures only)
+- `Utils/`, `Helpers/`, `Extensions/` (simple utilities)
+- `Tests/`, `Generated/`, `Assets/`, `Config/`
 
 ### Output Discovery
 
@@ -70,15 +70,16 @@ Apply heuristics to identify systems worth documenting:
 📊 Initial Build - System Discovery
 
 Systems to Capture (5):
-1. src/services - Business logic
-2. src/core - Domain algorithms  
-3. src/api - API layer
-4. src/features/auth - Auth flow
-5. src/features/dashboard - Dashboard
+1. src/services - Business logic, external IO
+2. src/core - Domain algorithms, validation engines
+3. src/api - API layer, request handling
+4. src/features/auth - Authentication flow
+5. src/features/dashboard - Dashboard orchestration
 
 Skipping:
 - src/ui/theme - Presentational only
 - src/models - Data types only
+- src/utils - Simple utilities
 
 🎯 All systems will use Opus (initial build)
 ```
@@ -178,6 +179,13 @@ After ALL captures complete:
 ⏺ context-layer-synthesis(Finalize context layer at [project_root])
 ```
 
+The synthesis agent will:
+1. Read all captured AGENTS.md files
+2. Build a system integration map
+3. Create parent nodes with architecture diagrams
+4. Deduplicate shared conventions to LCA
+5. Add downlinks throughout hierarchy
+
 ---
 
 ## Phase 3: Update Manifest & Report
@@ -194,11 +202,6 @@ Update `.context-layer/manifest.json`:
       "path": "src/services",
       "lastCommit": "def456",
       "lastCaptured": "2024-01-15T10:30:00Z"
-    },
-    {
-      "path": "src/api",
-      "lastCommit": "def456",
-      "lastCaptured": "2024-01-15T10:30:00Z"
     }
   ]
 }
@@ -207,15 +210,17 @@ Update `.context-layer/manifest.json`:
 Report:
 
 ```
-✅ Context Layer updated
+✅ Context Layer Complete
 
-📁 Changes:
+📁 Systems Captured:
    - src/api: Updated (Haiku)
    - src/workers: New (Opus)
    - src/features/auth: Updated (Opus)
 
 📊 3 systems captured, 3 skipped (no changes)
 📊 Total: ~12k tokens across 8 nodes
+
+🏗️ Architecture documented in parent nodes
 ```
 
 ---
@@ -229,10 +234,11 @@ Pass the model to use:
 ```
 
 The capture agent will:
-1. Run `context-layer codemap <path>` for API surface
-2. Read all source files
-3. Write AGENTS.md with codemap + curated content
-4. Create CLAUDE.md symlink
+1. Read all source files in the system
+2. Grep for imports/dependencies
+3. Write AGENTS.md with curated content
+4. Document what this system depends on and what depends on it
+5. Create CLAUDE.md symlink
 
 ---
 

@@ -35,11 +35,14 @@ echo "   ✓ context-layer-capture"
 curl -sL "$REPO_URL/agents/context-layer-synthesis.md" -o "$AGENTS_DIR/context-layer-synthesis.md"
 echo "   ✓ context-layer-synthesis"
 
-# Download skill
+# Download skills
 echo ""
-echo "📥 Downloading skill..."
+echo "📥 Downloading skills..."
 curl -sL "$REPO_URL/skills/context-layer.md" -o "$SKILL_DIR/context-layer.md"
-echo "   ✓ context-layer skill"
+echo "   ✓ context-layer (build/update)"
+
+curl -sL "$REPO_URL/skills/add-rule.md" -o "$SKILL_DIR/add-rule.md"
+echo "   ✓ add-rule (user-authored rules)"
 
 # Create .context-layer directory (manifest created by agents on first run)
 mkdir -p .context-layer
@@ -72,17 +75,6 @@ find . -name "AGENTS.md" \
     echo "   ✓ $dir/CLAUDE.md"
   fi
 done
-
-# Install CLI for codemap generation
-if command -v npm &> /dev/null; then
-  echo ""
-  echo "📦 Installing context-layer CLI..."
-  if npm install -g context-layer 2>&1 | grep -q "added"; then
-    echo "   ✓ CLI installed (provides tree-sitter codemaps)"
-  else
-    echo "   ℹ CLI not installed (run: npm install -g context-layer)"
-  fi
-fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

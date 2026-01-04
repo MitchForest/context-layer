@@ -1,253 +1,280 @@
 # Context Layer
 
-**Hierarchical documentation that gives AI agents the architectural knowledge to work effectively on large codebases.**
+**Self-documenting codebases for AI agents.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
----
+Every new AI chat burns context discovering your codebase from scratch. Context Layer creates hierarchical `AGENTS.md` files that give agents instant understanding of your architecture, system boundaries, and integration contracts.
 
 ## The Problem
 
-Your best engineers carry mental models: what each subsystem owns, what must never happen, where the real boundaries live. That knowledge lives in heads, not in code.
-
-When AI agents work on your codebase, they start from zero. They fumble in the dark, learning only by what they bump into.
+AI agents don't remember between sessions. Each new conversation:
+- Wastes tokens rediscovering the same patterns
+- Makes mistakes from incomplete understanding
+- Misses invariants not enforced in types
+- Doesn't understand how systems connect
 
 ## The Solution
 
-Context Layer creates hierarchical `AGENTS.md` files that combine:
+Context Layer creates a hierarchy of `AGENTS.md` files documenting:
+- **Ownership**: What each system owns vs. borrows
+- **Dependencies**: What depends on what
+- **Integration contracts**: How systems communicate
+- **Data flow**: How data moves through the system
+- **Invariants**: Must/never rules not in the code
 
-- **Codemaps** — API surface extracted via tree-sitter (function signatures, classes, types)
-- **Curated content** — Ownership, invariants, boundaries written by an LLM
+New agents read these files and instantly understand your architecture.
 
-**The result:** Every new chat or agent starts with your system's architecture already loaded. No more wasting context window tokens rediscovering the same patterns, boundaries, and invariants from scratch.
+## Quick Start
 
-```markdown
-# AuthService
-
-<!-- CODEMAP START -->
-## API Surface
-- `function authenticate(token: string): User`
-- `function validateSession(sessionId: string): boolean`
-<!-- CODEMAP END -->
-
----
-
-## Ownership
-**Owns**: User sessions, token validation
-**Does NOT own**: User data, permissions
-
-## Invariants
-- Sessions expire after 24 hours
-- Never store plain-text passwords
-```
-
----
-
-## Install
+### Install
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/MitchForest/context-layer/main/install/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/MitchForest/context-layer/main/install/install.sh | bash
 ```
 
-This installs:
-- **3 agents** → `.claude/agents/` (Coordinator, Capture, Synthesis)
-- **1 skill** → `.claude/skills/`
-- **CLI** → `npm install -g context-layer`
+This copies agents and skills to your `.claude/` directory.
 
----
+### Build Your Context Layer
 
-## Commands
+Open Claude Code and say:
 
-In Claude Code:
+```
+Build context layer
+```
 
-| Command | What Happens |
-|---------|--------------|
-| `Build context layer` | Initial build or update (auto-detects) |
-| `Build context layer for src/` | Scoped to a directory |
-| `Update context layer` | Same as build (auto-detects) |
+The coordinator agent:
+1. **Discovers** functional systems in your codebase
+2. **Spawns capture agents** (sequentially) for each system
+3. **Runs synthesis** to document architecture and deduplicate
 
-**One command handles everything.** The coordinator agent checks for a manifest and decides whether this is an initial build or an update.
+### Update Later
 
----
+Same command:
+
+```
+Build context layer
+```
+
+The coordinator detects the existing manifest and:
+- Analyzes git diffs since last capture
+- Skips unchanged systems
+- Uses **Haiku** for minor edits (fast, cheap)
+- Uses **Opus** for new/major changes (thorough)
 
 ## How It Works
 
-### Initial Build (no manifest exists)
-
-When you run `Build context layer` for the first time:
-
-1. **Coordinator agent** discovers systems in your codebase
-2. **Coordinator agent** spawns **one capture agent at a time** (sequential, not parallel)
-3. Each **capture agent**:
-   - Runs `context-layer codemap <path>` for API surface
-   - Reads all source files
-   - Writes `AGENTS.md` with codemap + curated content
-   - Uses **Opus** (initial builds always use Opus)
-4. After all captures, **synthesis agent** runs:
-   - Deduplicates shared knowledge to parent nodes
-   - Creates parent AGENTS.md files
-   - Updates manifest
-
 ```
-📊 Initial Build
-
-Systems to Capture (5):
-1. src/services
-2. src/core
-3. src/api
-4. src/features/auth
-5. src/features/dashboard
-
-🎯 All systems → Opus (initial build)
-
-📍 [1/5] Capturing services (Opus)...
-✅ [1/5] services captured
-
-📍 [2/5] Capturing core (Opus)...
-✅ [2/5] core captured
-
-... continues sequentially ...
-
-✅ All 5 captures complete. Running synthesis...
+┌─────────────────────────────────────────┐
+│         COORDINATOR (Opus)               │
+│  - Discovers systems                     │
+│  - Analyzes git diffs for updates        │
+│  - Chooses Opus vs Haiku per capture    │
+└───────────────┬─────────────────────────┘
+                │ Sequential (as many as needed)
+    ┌───────────┼───────────┬─────────┐
+    ▼           ▼           ▼         ▼
+┌─────────┐ ┌─────────┐ ┌─────────┐  ...
+│ CAPTURE │ │ CAPTURE │ │ CAPTURE │
+│ (Opus)  │ │ (Haiku) │ │ (Opus)  │
+└────┬────┘ └────┬────┘ └────┬────┘
+     └───────────┴───────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────┐
+│          SYNTHESIS (Opus)                │
+│  - Builds system integration map         │
+│  - Creates architecture diagrams         │
+│  - Documents data flow                   │
+│  - Deduplicates shared conventions       │
+│  - Creates parent nodes with downlinks   │
+└─────────────────────────────────────────┘
 ```
 
-### Update (manifest exists)
+### Coordinator Agent
 
-When you run `Build context layer` after the initial build:
+Orchestrates the entire process:
+- Checks for existing manifest (build vs update)
+- Discovers functional systems worth documenting
+- Skips presentational/data-only code
+- Spawns capture agents one at a time
+- Selects model based on change analysis
 
-1. **Coordinator agent** loads the manifest
-2. **Coordinator agent** runs `git diff` for each system since last capture
-3. **Coordinator agent** categorizes each system:
+### Capture Agent
 
-| Change Type | Action | Model |
-|-------------|--------|-------|
-| No changes | Skip | — |
-| Minor edits (existing files) | Capture | **Haiku** |
-| New files added | Capture | **Opus** |
-| Major rewrites (>50% changed) | Capture | **Opus** |
-| New system detected | Capture | **Opus** |
+Documents a single system:
+- Reads all source files
+- Greps for imports/dependencies
+- Documents ownership, scope, lifecycle
+- Maps integration contracts with other systems
+- Creates `AGENTS.md` with curated knowledge
 
-4. **Coordinator agent** spawns **capture agents sequentially** for systems that need updating
-5. **Synthesis agent** runs after all captures
+### Synthesis Agent
 
-```
-📊 Update Analysis
+Creates the architecture view:
+- Aggregates dependencies from all captures
+- Builds system integration map
+- Creates parent nodes with:
+  - Architecture diagrams
+  - Data flow documentation
+  - System boundaries
+- Deduplicates shared conventions to LCA
+- Adds downlinks throughout hierarchy
+- Preserves user-authored Rules sections
 
-Last captured: 2024-01-10 (commit abc123)
-Current: HEAD (commit def456)
+## Adding Rules
 
-Systems Status:
-✅ src/services — No changes (skip)
-✅ src/core — No changes (skip)
-🔄 src/api — Minor edits → Haiku
-🆕 src/workers — New system → Opus
-🔄 src/features/auth — 3 new files → Opus
-
-Capturing 3 systems...
-
-📍 [1/3] Capturing api (Haiku)...
-✅ [1/3] api captured
-
-📍 [2/3] Capturing workers (Opus)...
-✅ [2/3] workers captured
-
-📍 [3/3] Capturing auth (Opus)...
-✅ [3/3] auth captured
-
-✅ All captures complete. Running synthesis...
-```
-
----
-
-## Architecture
+Code-derived knowledge is captured automatically. But user-authored rules emerge over time:
 
 ```
-User: "Build context layer"
-            │
-            ▼
-┌─────────────────────────────┐
-│   COORDINATOR AGENT         │
-│   • Check for manifest      │
-│   • Discover systems        │
-│   • Diff changes per system │
-│   • Select model per system │
-│   • Spawn capture agents    │
-│     (one at a time)         │
-└─────────────────────────────┘
-            │
-            ▼ Sequential
-┌─────────────────────────────┐
-│   CAPTURE AGENT (per system)│
-│   • Run codemap CLI         │
-│   • Read all source files   │
-│   • Write AGENTS.md         │
-│   • Model: Opus or Haiku    │
-└─────────────────────────────┘
-            │
-            ▼
-┌─────────────────────────────┐
-│   SYNTHESIS AGENT           │
-│   • Deduplicate to parents  │
-│   • Create parent nodes     │
-│   • Add downlinks           │
-│   • Update manifest         │
-└─────────────────────────────┘
+> Never use `any` type
+> Always get approval before schema changes
+> Ask before adding caching layers
+> Prefer composition over inheritance
 ```
 
----
+**Prefix markers indicate flexibility:**
+
+| Prefix | Meaning |
+|--------|---------|
+| **Never** | Absolute prohibition |
+| **Always** | Must do this |
+| **Prefer** | Default, exceptions with justification |
+| **Ask first** | Get permission before proceeding |
+| **Avoid** | Soft rule, use judgment |
+
+The `add-rule` skill:
+- Adds to the appropriate AGENTS.md (root or scoped)
+- Creates a `## Rules` section if needed
+- Preserved by synthesis (never overwritten)
+- Suggests LCA elevation when same rule exists in multiple files
 
 ## What Gets Created
 
 ```
 project/
 ├── .context-layer/
-│   └── manifest.json       # Tracks systems + last commit per system
+│   └── manifest.json         # Tracks systems + last commit
 │
 ├── src/
-│   ├── AGENTS.md           # Parent node
-│   ├── CLAUDE.md           # Symlink for Claude Code
+│   ├── AGENTS.md             # Architecture: diagram, data flow, boundaries
+│   ├── CLAUDE.md → AGENTS.md
 │   │
 │   ├── services/
-│   │   ├── AGENTS.md       # Codemap + curated content
+│   │   ├── AGENTS.md         # Dependencies, integration contracts
 │   │   └── CLAUDE.md
 │   │
-│   └── core/
+│   ├── core/
+│   │   ├── AGENTS.md         # Ownership, invariants
+│   │   └── CLAUDE.md
+│   │
+│   └── features/
 │       ├── AGENTS.md
 │       └── CLAUDE.md
 ```
 
----
+### Example Parent Node (Architecture)
 
-## CLI
+```markdown
+# Backend
 
-The CLI provides tree-sitter codemap generation:
+> Owns all server-side business logic and external integrations.
 
-```bash
-context-layer codemap [path]
+## System Architecture
+
+┌─────────────────────────────────────────┐
+│                  API                     │
+│  ┌──────────┐    ┌──────────┐           │
+│  │   Auth   │───▶│   Users  │           │
+│  └────┬─────┘    └────┬─────┘           │
+│       │               │                  │
+└───────┼───────────────┼──────────────────┘
+        │               │
+        ▼               ▼
+┌─────────────────────────────────────────┐
+│                Database                  │
+└─────────────────────────────────────────┘
+
+## Data Flow
+
+1. Request → API/Auth → validates session
+2. API/Auth → API/Users → fetches user data
+3. API/Users → Database → queries storage
+4. Response flows back up
+
+## System Boundaries
+
+| System | Owns | Does NOT Own |
+|--------|------|--------------|
+| API | Request handling | Storage |
+| Database | Persistence | Business logic |
+
+## Related Context
+
+- [api](./api/AGENTS.md) — Request handling, auth
+- [database](./database/AGENTS.md) — Persistence layer
 ```
 
-**Supported languages:**
-- TypeScript/TSX
-- JavaScript/JSX
-- Python
-- Swift
-- Rust
-- Go
+### Example Leaf Node (System)
 
----
+```markdown
+# UserService
+
+> Owns user data persistence and session state.
+
+## Scope
+
+**Owns**: User CRUD, session management, password hashing
+
+**Does NOT own**: HTTP handling, email sending, order management
+
+## Dependencies
+
+### This System Depends On
+
+| System | What's Used | Contract |
+|--------|-------------|----------|
+| Core/Validation | Input validation | Sync, returns Result |
+| Database | UserRepository | Persistence |
+
+### Systems That Depend On This
+
+| System | How It's Used |
+|--------|---------------|
+| API/Auth | Validates credentials |
+| API/Users | CRUD operations |
+
+## Invariants
+
+- **Must**: Hash passwords before storage
+- **Never**: Return password hash in API responses
+```
 
 ## Compatibility
 
-**Building:** Requires Claude Code (uses agent spawning)
+**Required**: Claude Code (for agent spawning)
 
-**Using:** Once built, `AGENTS.md` files work with any AI tool:
-- Claude Code, Cursor, Copilot, Windsurf, Codex, etc.
+**Benefits any AI tool** that reads `AGENTS.md` or `CLAUDE.md` files, including:
+- Cursor
+- GitHub Copilot
+- Codex
+- Any LLM-based coding assistant
 
----
+## File Conventions
 
-## Credits
+- `AGENTS.md` — Primary documentation file
+- `CLAUDE.md` — Symlink to AGENTS.md (Claude Code compatibility)
+- `.context-layer/manifest.json` — Tracks captured systems
 
-Inspired by [The Intent Layer](https://www.intent-systems.com/learn/intent-layer) by Tyler Brandt.
+## Philosophy
+
+**Curated over generated.** Context Layer doesn't dump code structure—it captures institutional knowledge that code alone can't convey:
+- Why systems are designed this way
+- What boundaries exist and why
+- How data flows through the system
+- What invariants must hold
+
+**Hierarchical loading.** Agents automatically get broad context (parent nodes) plus specific detail (current directory). No manual prompt engineering.
+
+**Self-updating.** Run "Build context layer" whenever you want updates. The coordinator handles the rest.
 
 ## License
 
