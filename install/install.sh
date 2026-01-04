@@ -8,13 +8,21 @@
 set -e
 
 REPO_URL="https://raw.githubusercontent.com/MitchForest/context-layer/main"
-
-echo "🧠 Installing Context Layer..."
-echo ""
+VERSION="0.2.0"
 
 # Always install to Claude Code directory
 AGENTS_DIR=".claude/agents"
 SKILL_DIR=".claude/skills"
+
+# Detect if this is an update
+if [ -f "$AGENTS_DIR/context-layer-coordinator.md" ]; then
+  echo "🔄 Updating Context Layer to v$VERSION..."
+  IS_UPDATE=true
+else
+  echo "🧠 Installing Context Layer v$VERSION..."
+  IS_UPDATE=false
+fi
+echo ""
 
 echo "📍 Installing for Claude Code"
 echo "📁 Agents: $AGENTS_DIR"
@@ -78,24 +86,39 @@ done
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Context Layer installed successfully!"
+if [ "$IS_UPDATE" = true ]; then
+  echo "✅ Context Layer updated to v$VERSION!"
+else
+  echo "✅ Context Layer v$VERSION installed!"
+fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "Agents installed to $AGENTS_DIR:"
-echo "   • context-layer-coordinator (orchestrates everything)"
-echo "   • context-layer-capture (analyzes systems)"
-echo "   • context-layer-synthesis (deduplication & hierarchy)"
+
+if [ "$IS_UPDATE" = true ]; then
+  echo "Agents updated in $AGENTS_DIR"
+  echo ""
+  echo "Your existing AGENTS.md files are untouched."
+  echo "Run 'Build context layer' to use the new agent versions."
+else
+  echo "Agents installed to $AGENTS_DIR:"
+  echo "   • context-layer-coordinator (orchestrates everything)"
+  echo "   • context-layer-capture (analyzes systems)"
+  echo "   • context-layer-synthesis (deduplication & hierarchy)"
+  echo ""
+  echo "Usage (in Claude Code):"
+  echo ""
+  echo "   > Build context layer"
+  echo ""
+  echo "   The coordinator will:"
+  echo "   - Discover systems in your codebase"
+  echo "   - Initial build: capture all with Opus"
+  echo "   - Updates: use Haiku for minor changes, Opus for major"
+  echo "   - Run synthesis to deduplicate"
+  echo "   - Create hierarchical AGENTS.md files"
+  echo ""
+  echo "Once built, the AGENTS.md files work with any AI tool. ✨"
+fi
 echo ""
-echo "Usage (in Claude Code):"
-echo ""
-echo "   > Build context layer"
-echo ""
-echo "   The coordinator will:"
-echo "   - Discover systems in your codebase"
-echo "   - Initial build: capture all with Opus"
-echo "   - Updates: use Haiku for minor changes, Opus for major"
-echo "   - Run synthesis to deduplicate"
-echo "   - Create hierarchical AGENTS.md files"
-echo ""
-echo "Once built, the AGENTS.md files work with any AI tool. ✨"
+echo "To update agents later, re-run:"
+echo "   curl -fsSL https://raw.githubusercontent.com/MitchForest/context-layer/main/install/install.sh | bash"
 echo ""

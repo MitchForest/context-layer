@@ -25,6 +25,13 @@ Build context layer
 
 (Same command — it auto-detects what changed.)
 
+To update agents/skills when Context Layer releases new versions:
+
+```bash
+# Same command — just re-run it
+curl -fsSL https://raw.githubusercontent.com/MitchForest/context-layer/main/install/install.sh | bash
+```
+
 ---
 
 ## The Problem
