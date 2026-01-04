@@ -11,7 +11,21 @@ You analyze a single system and create its AGENTS.md with curated institutional 
 
 **Model selection:** The coordinator passes `--model opus` or `--model haiku` based on change analysis.
 
-## Your Mission
+---
+
+## Mode Detection
+
+Check if you're in **Create mode** or **Fix mode**:
+
+- **Create mode:** Normal invocation like "Analyze services at /path"
+- **Fix mode:** Invocation includes "SPECIFIC FIXES REQUIRED" or "Fix issues in"
+
+**If Fix mode:** Skip to "Fix Mode" section below.
+**If Create mode:** Continue with normal flow.
+
+---
+
+## Your Mission (Create Mode)
 
 Given a directory path, create an AGENTS.md that captures what **code alone cannot tell** a future AI agent:
 - What this system owns vs. borrows
@@ -341,3 +355,77 @@ Before returning, verify ALL of these:
 - [ ] Ownership distinguishes owns/borrows/shares
 - [ ] Lifecycle is documented (singleton, per-request, etc.)
 - [ ] Under 2000 tokens
+
+---
+
+## Fix Mode
+
+**Triggered when:** Coordinator passes "SPECIFIC FIXES REQUIRED" in the invocation.
+
+### Parse Instructions
+
+Extract the specific fixes from the invocation:
+
+```
+Fix issues in apps/ios/scribble/Services
+
+SPECIFIC FIXES REQUIRED:
+1. Add "Key Invariants" section with 2-3 invariants
+2. Add "Systems That Depend On This" table to Dependencies section
+
+DO NOT rewrite entire file. Only add/fix the listed sections.
+```
+
+### Read Existing File
+
+```bash
+cat [target]/AGENTS.md
+```
+
+### Fix Only What's Listed
+
+For each specific fix:
+
+1. **Missing section:** Add the section with proper content
+2. **Incomplete section:** Enhance the existing section
+3. **Stale reference:** Verify and update or remove
+
+### Do NOT
+
+❌ Rewrite sections that weren't listed
+❌ Change the structure/format of existing sections
+❌ Remove user-authored content (## Rules)
+
+### Research for Fixes
+
+Even in fix mode, you must research properly:
+
+**For "Key Invariants":**
+```bash
+grep -r "assert\|guard\|must\|always\|never\|throw" [target] --include="*.swift" --include="*.ts"
+```
+
+**For "Systems That Depend On This":**
+```bash
+grep -r "[system_name]" [project_root] --include="*.swift" --include="*.ts" --include="*.tsx" | grep -v "[target]"
+```
+
+**For stale references:**
+```bash
+grep -r "[claimed_consumer]" [project_root] --include="*.swift" --include="*.ts" | head -5
+```
+
+### Return Summary
+
+```
+✅ Fixed: apps/ios/scribble/Services/AGENTS.md
+
+Changes made:
+  + Added "Key Invariants" section (3 invariants)
+  + Added "Systems That Depend On This" table (2 consumers)
+
+Unchanged:
+  - Scope section
+  - Dependencies (This System Depends On)
+  - Integration Points
+```

@@ -60,6 +60,24 @@ The coordinator detects the existing manifest and:
 - Uses **Haiku** for minor edits (fast, cheap)
 - Uses **Opus** for new/major changes (thorough)
 
+### Review & Fix
+
+Grade your documentation quality:
+
+```
+Review context layer
+```
+
+The coordinator checks all AGENTS.md files against quality requirements and produces a structured report card.
+
+Fix any issues found:
+
+```
+Fix context layer issues
+```
+
+The coordinator re-runs captures with specific instructions for each file that has issues—no manual intervention needed.
+
 ## How It Works
 
 ```
@@ -306,6 +324,60 @@ The synthesis agent validates these and reports any missing sections.
 **Hierarchical loading.** Agents automatically get broad context (parent nodes) plus specific detail (current directory). No manual prompt engineering.
 
 **Self-updating.** Run "Build context layer" whenever you want updates. The coordinator handles the rest.
+
+**Feedback loop.** Run "Review context layer" to get a quality grade. Run "Fix context layer issues" to automatically improve any gaps.
+
+## Feedback Loop
+
+Context Layer includes a structured feedback mechanism:
+
+```
+┌─────────────────────────────────────┐
+│         "Review context layer"       │
+│                                      │
+│  Grades all AGENTS.md files against  │
+│  quality requirements:               │
+│  - Dependencies (both directions)    │
+│  - Key Invariants                    │
+│  - Data Flow (parent nodes)          │
+│  - App Integration (root)            │
+└───────────────┬─────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────┐
+│          Structured Report           │
+│                                      │
+│  ✅ 10/14 passing                    │
+│  ❌ 4 files with issues              │
+│                                      │
+│  Saved to .context-layer/review.json │
+└───────────────┬─────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────┐
+│      "Fix context layer issues"      │
+│                                      │
+│  Re-runs captures with SPECIFIC      │
+│  instructions for each issue:        │
+│  - "Add Key Invariants section"      │
+│  - "Fix stale Consumed By reference" │
+│  - Re-runs synthesis for parents     │
+└───────────────┬─────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────┐
+│         Automatic Verification       │
+│                                      │
+│  Re-runs review to confirm all       │
+│  issues are resolved.                │
+└─────────────────────────────────────┘
+```
+
+This is **non-fragile** because:
+- Review uses a structured checklist (binary pass/fail)
+- Issues are stored as JSON, not interpreted from natural language
+- Fix mode passes specific, actionable instructions to capture agents
+- Verification confirms the fixes worked
 
 ## License
 
