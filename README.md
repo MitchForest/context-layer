@@ -4,6 +4,29 @@
 
 Every new AI chat burns context discovering your codebase from scratch. Context Layer creates hierarchical `AGENTS.md` files that give agents instant understanding of your architecture, system boundaries, and integration contracts.
 
+## TL;DR
+
+```bash
+# Install (run in your project root)
+curl -fsSL https://raw.githubusercontent.com/MitchForest/context-layer/main/install/install.sh | bash
+```
+
+Then in Claude Code:
+
+```
+Build context layer
+```
+
+After major changes:
+
+```
+Build context layer
+```
+
+(Same command — it auto-detects what changed.)
+
+---
+
 ## The Problem
 
 AI agents don't remember between sessions. Each new conversation:
