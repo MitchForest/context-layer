@@ -45,41 +45,75 @@ cat "$PROJECT_ROOT/.context-layer/manifest.json" 2>/dev/null || echo "NO_MANIFES
 
 ## Phase 1A: Initial Build (No Manifest)
 
-### Discover Systems
+### Discover Systems (SPEND TOKENS HERE)
 
-```bash
-find [target] -type d -maxdepth 4
-```
+This is the most important phase. You must **deeply understand** the codebase before deciding what to capture.
 
-Apply heuristics to identify **functional systems** worth documenting:
+**What is a "system" in software architecture?**
 
-**✅ CAPTURE (has business logic, state, algorithms):**
-- `Services/`, `Core/`, `Domain/`, `API/`, `Engine/`
-- Directories with Service, Engine, Manager, Controller, Repository files
-- Has state machines, validation logic, business rules
+A system is a cohesive unit of code that:
+- Has **ONE job** / single responsibility
+- Has **clear boundaries** — defined inputs and outputs
+- Can be **understood independently** — you can explain what it does without explaining everything else
+- Has its **own domain** — distinct concepts, types, state
 
-**❌ SKIP (presentational, data-only, infrastructure):**
-- `Theme/`, `Components/`, `UI/` (presentational)
-- `Models/`, `Types/`, `DTOs/` (data structures only)
-- `Utils/`, `Helpers/`, `Extensions/` (simple utilities)
-- `Tests/`, `Generated/`, `Assets/`, `Config/`
+**Discovery Process:**
+
+1. **Explore the full directory tree**
+   ```bash
+   find [target] -type d | head -100
+   ```
+
+2. **Read representative files** to understand what each area does
+   ```bash
+   # Sample files from different directories
+   head -50 [dir]/*.swift [dir]/*.ts [dir]/*.py 2>/dev/null | head -200
+   ```
+
+3. **Ask for each directory:**
+   - Is this ONE system with ONE job?
+   - Or is this a CONTAINER holding multiple distinct systems?
+   - If container → go deeper, examine children
+
+4. **Identify system boundaries:**
+   - Where does one responsibility end and another begin?
+   - What are the integration points between systems?
+   - Which directories are truly independent vs. tightly coupled?
+
+**What to capture (systems):**
+- Code with business logic, algorithms, state machines
+- Services that orchestrate or perform IO
+- Engines that compute or transform
+- Feature modules with distinct flows
+
+**What to skip (not systems):**
+- Pure UI components with no logic
+- Type definitions / DTOs with no behavior
+- Simple utilities with no domain knowledge
+- Test files, generated code, assets
+
+**Critical:** A directory named "Core" might contain 3 separate systems inside it. A directory named "Features" might have 10 distinct feature modules. **Look at the actual code structure, not just directory names.**
 
 ### Output Discovery
 
+After deep exploration, output your findings:
+
 ```
-📊 Initial Build - System Discovery
+📊 System Discovery
 
-Systems to Capture (5):
-1. src/services - Business logic, external IO
-2. src/core - Domain algorithms, validation engines
-3. src/api - API layer, request handling
-4. src/features/auth - Authentication flow
-5. src/features/dashboard - Dashboard orchestration
+Explored: [X] directories, sampled [Y] files
 
-Skipping:
-- src/ui/theme - Presentational only
-- src/models - Data types only
-- src/utils - Simple utilities
+Systems Identified (N):
+1. [path] - [one-sentence description of its job]
+2. [path] - [one-sentence description of its job]
+...
+
+Containers (will become parent nodes):
+- [path] - contains systems 1, 2, 3
+- [path] - contains systems 4, 5
+
+Skipping (not systems):
+- [path] - [reason: pure UI / types only / utilities / etc]
 
 🎯 All systems will use Opus (initial build)
 ```
