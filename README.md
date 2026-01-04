@@ -242,11 +242,42 @@ project/
 | API/Auth | Validates credentials |
 | API/Users | CRUD operations |
 
-## Invariants
+## Key Invariants
 
 - **Must**: Hash passwords before storage
 - **Never**: Return password hash in API responses
+- **Assumes**: Caller has validated session
 ```
+
+## Quality Requirements
+
+The agents enforce these standards:
+
+### Leaf Nodes (Required)
+
+| Section | Requirement |
+|---------|-------------|
+| **Dependencies** | Both directions: what it depends on AND what depends on it |
+| **Cross-app deps** | If in a monorepo, document connections to other apps |
+| **Key Invariants** | 2-3 invariants (or explicit "none beyond type constraints") |
+| **Scope** | Explicit "Owns" and "Does NOT own" |
+
+### Parent Nodes (Required)
+
+| Section | Requirement |
+|---------|-------------|
+| **Data Flow** | At least one documented flow (entry → systems → result) |
+| **System Architecture** | ASCII diagram showing relationships |
+| **Related Context** | Downlinks to all child systems |
+
+### Root Node (Monorepos)
+
+| Section | Requirement |
+|---------|-------------|
+| **App Integration** | How apps communicate (and what they DON'T do) |
+| **All parent requirements** | Data flow, architecture, downlinks |
+
+The synthesis agent validates these and reports any missing sections.
 
 ## Compatibility
 

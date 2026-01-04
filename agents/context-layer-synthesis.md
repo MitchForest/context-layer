@@ -35,10 +35,21 @@ These sections are created by users via the `add-rule` skill and must be preserv
 
 Parent nodes are NOT just containers. They MUST document:
 - **System diagram**: How systems relate visually
-- **Data flow**: How data moves between systems
+- **Data flow**: How data moves between systems (REQUIRED - see Phase 4)
 - **Dependency direction**: What depends on what
 - **Boundaries**: Where one system ends and another begins
 - **Orchestration**: What coordinates the pieces
+
+---
+
+## CRITICAL: Cross-App Integration (Monorepos)
+
+For repos with multiple apps (e.g., iOS + web + backend):
+
+The **root AGENTS.md** MUST include an App Integration section documenting:
+- Which apps talk to which
+- What mechanism they use (API, shared DB, etc.)
+- What they explicitly DON'T do (e.g., "iOS and web never communicate directly")
 
 ---
 
@@ -151,6 +162,45 @@ Then runs `Build context layer` (whole repo):
 ---
 
 ## Phase 4: Document Architecture
+
+### REQUIRED: Data Flow Section
+
+Every parent node MUST have a Data Flow section documenting the primary flows:
+
+1. **Identify entry points**: User actions, API calls, scheduled jobs
+2. **Trace data movement**: What systems does data pass through?
+3. **Document transformations**: How does data change at each step?
+
+Format:
+```markdown
+## Data Flow
+
+### [Flow Name] (e.g., "User Registration", "Progress Sync")
+
+1. **[Actor/Trigger]** → [System A] — [what happens]
+2. [System A] → **[System B]** — [data passed, transformation]
+3. [System B] → **[System C]** — [final result]
+```
+
+### REQUIRED: Cross-App Integration (Root/App-level nodes only)
+
+For monorepos, document how apps integrate:
+
+```markdown
+## App Integration
+
+| From | To | Mechanism | Auth |
+|------|-----|-----------|------|
+| apps/ios | apps/backend | Convex API | Device auth |
+| apps/web | apps/backend | Convex API | Session cookie |
+| apps/ios | apps/web | **NONE** | N/A |
+
+### Integration Rules
+
+- iOS and web never communicate directly
+- All data flows through backend
+- Backend is single source of truth
+```
 
 ### For Each Parent Node
 
@@ -327,6 +377,24 @@ Every parent node MUST have a "Related Context" section:
 | Parent nodes | 3000 tokens |
 | Root node | 5000 tokens |
 
+### Required Sections Validation
+
+Check each node type has required sections:
+
+**Leaf nodes (capture agent output):**
+- [ ] Dependencies section with BOTH directions
+- [ ] Key Invariants section (at least 2-3 items or explicit "none")
+- [ ] Scope section with Owns/Does NOT own
+
+**Parent nodes:**
+- [ ] Data Flow section with at least one documented flow
+- [ ] System Architecture diagram
+- [ ] Related Context section with downlinks
+
+**Root node (monorepos):**
+- [ ] App Integration section (how apps communicate)
+- [ ] All parent node requirements
+
 ### Hierarchy Validation
 
 Check for:
@@ -334,6 +402,7 @@ Check for:
 - Missing downlinks
 - Broken relative paths
 - Missing CLAUDE.md symlinks
+- **Stale cross-references** (verify referenced systems still exist)
 
 ---
 
@@ -379,6 +448,7 @@ Update `[project_root]/.context-layer/manifest.json`:
    ✅ Created system integration map
    ✅ Documented 3 data flows
    ✅ Mapped 12 integration contracts
+   ✅ Added App Integration section to root
 
 📊 Deduplication:
    ✅ Moved "DI pattern" → src/AGENTS.md
@@ -393,9 +463,29 @@ Update `[project_root]/.context-layer/manifest.json`:
 🔗 Symlinks:
    ✅ Created 8 CLAUDE.md symlinks
 
+✅ Required Sections:
+   ✅ All leaf nodes have Dependencies (both directions)
+   ✅ All leaf nodes have Key Invariants
+   ✅ All parent nodes have Data Flow
+   ✅ Root has App Integration (monorepo)
+
 📏 Token Budgets:
    ✅ All nodes within limits
    📊 Total: ~14k tokens
+```
+
+### If Validation Fails
+
+Report specific failures:
+```
+⚠️ Validation Issues:
+
+Missing required sections:
+  - apps/ios/Services/AGENTS.md: Missing "Key Invariants" section
+  - apps/AGENTS.md: Missing "Data Flow" section
+
+Stale references:
+  - apps/backend/convex/web/AGENTS.md: "Consumed By" references non-existent system
 ```
 
 ---

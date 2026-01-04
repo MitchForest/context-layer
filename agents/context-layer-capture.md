@@ -45,6 +45,8 @@ Read every source file in the system. You need complete understanding to documen
 
 ## Phase 2: Discover Dependencies
 
+**REQUIRED**: Both dependency tables MUST be populated. If truly empty, write "None identified."
+
 ### What This System DEPENDS ON
 
 Grep for imports from other systems:
@@ -60,12 +62,29 @@ Categorize:
 
 ### What DEPENDS ON This System
 
-Search the broader codebase for usages:
+Search the **entire codebase** (not just siblings) for usages:
 
 ```bash
-# Find who imports this system
-grep -r "[system_name]" [project_root] --include="*.swift" --include="*.ts" | grep -v "[target]"
+# Find who imports this system - search WHOLE repo
+grep -r "[system_name]" [project_root] --include="*.swift" --include="*.ts" --include="*.tsx" --include="*.py" | grep -v "[target]"
 ```
+
+### Cross-App Dependencies (Monorepos)
+
+For systems that communicate with OTHER APPS (not sibling directories):
+
+```bash
+# Example: iOS app calling backend APIs
+grep -r "api\." [target] --include="*.swift"
+grep -r "convex" [target] --include="*.swift"
+
+# Example: Backend consumed by multiple apps
+grep -r "[backend_export]" [project_root]/apps --include="*.ts" --include="*.swift"
+```
+
+Document these explicitly:
+- **Calls external API**: Which endpoints, what auth mechanism
+- **Called by external apps**: Which apps consume this system
 
 ### Build Dependency Summary
 
@@ -74,10 +93,32 @@ DEPENDS ON:
 - Core/Validation - for input validation
 - Services/Network - for API calls
 - (external) PostgreSQL - for persistence
+- (cross-app) apps/backend/convex/ios/* - via Convex API
 
 DEPENDED ON BY:
 - API/Users - uses UserService
 - API/Orders - uses UserService, OrderService
+- (cross-app) apps/ios - consumes all endpoints
+```
+
+---
+
+## Phase 2.5: Verify Existing Documentation (Updates Only)
+
+If updating an existing AGENTS.md:
+
+1. Read the current "Systems That Depend On This" section
+2. For each claimed consumer, verify it still imports this system:
+   ```bash
+   grep -r "[this_system]" [claimed_consumer_path] --include="*.ts" --include="*.swift"
+   ```
+3. **If no matches**: REMOVE the stale consumer
+4. **If matches but different usage**: UPDATE the description
+
+Report any changes:
+```
+⚠️ Removed stale: apps/old-web (no longer imports)
+✅ Verified: apps/ios/Services (still uses sync endpoints)
 ```
 
 ---
@@ -112,11 +153,17 @@ For each dependency relationship:
 - Things passed via constructor/parameters → **Borrows**
 - Things accessed globally or via context → **Shares**
 
-### Invariants
+### Invariants (REQUIRED)
 
-- Assertions and guards
-- Comments saying "must" or "always" or "never"
-- Implicit contracts between systems
+You MUST document at least 2-3 invariants. Look for:
+
+- Assertions and guards that throw
+- Comments containing "must", "always", "never", "important", "don't"
+- Implicit contracts between callers/callees
+- State that must be maintained across operations
+- Order-of-operations requirements
+
+If genuinely none found, write: "No non-obvious invariants identified beyond type constraints."
 
 ---
 
@@ -190,10 +237,13 @@ Create `[target]/AGENTS.md`:
 
 **Immutable**: [what's fixed at creation]
 
-## Invariants
+## Key Invariants
+
+<!-- REQUIRED: At least 2-3 invariants. These are things code doesn't enforce in types. -->
 
 - **Must**: [critical requirement that must always hold]
-- **Never**: [thing that must never happen]
+- **Never**: [thing that must never happen]  
+- **Assumes**: [precondition that callers must satisfy]
 
 ## Patterns
 
@@ -275,12 +325,19 @@ Key Integration Points:
 
 ## Quality Checklist
 
-Before returning:
+Before returning, verify ALL of these:
 
-- [ ] Dependencies section shows what this depends on AND what depends on it
-- [ ] Integration points document the contracts
+### Required (will fail review if missing)
+
+- [ ] **Dependencies table has BOTH directions** (depends on + depended on by)
+- [ ] **Cross-app dependencies documented** if system talks to other apps
+- [ ] **Key Invariants has 2-3 items** (or explicit "none identified")
+- [ ] **Stale consumers removed** (if updating existing doc)
+- [ ] **CLAUDE.md symlink created**
+
+### Expected (include unless truly N/A)
+
+- [ ] Integration points document the contracts (data types, sync/async)
 - [ ] Ownership distinguishes owns/borrows/shares
-- [ ] Lifecycle is documented
-- [ ] Invariants are things code doesn't enforce in types
+- [ ] Lifecycle is documented (singleton, per-request, etc.)
 - [ ] Under 2000 tokens
-- [ ] CLAUDE.md symlink created
